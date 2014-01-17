@@ -23,9 +23,6 @@ private:
    
    // copy inner points to boundary
    inline void SetBoundary (Array<real> & p);
-
-   // Evaluate residual
-   inline real Residual (StaggeredGrid & grid);   
 };
 #endif //SOR_SOLVER_HH
 
