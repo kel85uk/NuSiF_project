@@ -55,13 +55,13 @@ int main()
    std::cout<<"\nRunning Solver for Grid Setup 1\n";
    converged = solver.solve(grid);
    CHECK_MSG(converged , "Grid Setup 1 not converged");
-
+//   grid.p().print();
    std::cout<<"\nInitializing Grid Setup 2\n";
    initGridSetup2( grid );
    std::cout<<"\nRunning Solver for Grid Setup 2\n";
    converged = solver.solve(grid);
    CHECK_MSG(converged, "Grid Setup 2 not converged");
-   
+//   grid.p().print();
    std::cout<<"\nCG Test 2D passed\n";
    return 0;
 }

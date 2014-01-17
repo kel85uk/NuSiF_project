@@ -3,6 +3,7 @@
 
 #include "StaggeredGrid.hh"
 #include "Solver.hh"
+#include <omp.h>
 
 class RedBlackSORSolver: public Solver
 {
