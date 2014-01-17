@@ -6,7 +6,6 @@
 #include "Debug.hh"
 #include "Types.hh"
 
-
 //*******************************************************************************************************************
 /*! Class for reading configuration from a file
 *
@@ -19,11 +18,17 @@
 *   - for example usage have a look at the FileReaderTest
 */
 //*******************************************************************************************************************
+
 class FileReader
 {
 private:
 
-	std::map<std::string, std::string> parameters;
+    bool has_only_spaces(const std::string& str);
+    bool string_only_digits(const std::string& str);
+    bool string_only_reals(const std::string& str);
+    std::map<std::string,int> IntParameter;
+    std::map<std::string,real> RealParameter;
+    std::map<std::string,std::string> StringParameter;
 
 public:
 
@@ -65,43 +70,25 @@ public:
 
 };
 
-
-
-
 inline int FileReader::getIntParameter(const std::string &key) const
 {
-   auto iter = parameters.find(key);
-   int val=0;
-   CHECK_MSG(iter != parameters.end(), "Parameter '" + key +"' does not exist!");
-   try {val = std::stoi(iter->second);}
-   catch (...)
-       {CHECK_MSG(0, "Parameter type of '" + key +"' is not int!");}
-   return val;
+   auto iter = IntParameter.find(key);
+   CHECK_MSG(iter != IntParameter.end(), "Parameter '" + key +"' does not exist!");
+   return iter->second;
 }
 
 inline real FileReader::getRealParameter(const std::string &key) const
 {
-   auto iter = parameters.find(key);
-   real val=0.0;
-   CHECK_MSG(iter != parameters.end(), "Parameter '" + key +"' does not exist!");
-   try {val = std::stof(iter->second);}
-   catch (...)
-       {CHECK_MSG(0, "Parameter type of \"" + key +"\" is not int!");}
-   return val;
+   auto iter = RealParameter.find(key);
+   CHECK_MSG(iter != RealParameter.end(), "Parameter '" + key +"' does not exist!");
+   return iter->second;
 }
 
 inline std::string FileReader::getStringParameter(const std::string &key) const
 {
-   auto iter = parameters.find(key);
-   std::string val = "";
-   CHECK_MSG(iter != parameters.end(), "Error: Parameter '" + key +"' does not exist!");
-   val = iter->second;
-   return val;
+   auto iter = StringParameter.find(key);
+   CHECK_MSG(iter != StringParameter.end(), "Parameter '" + key +"' does not exist!");
+   return iter->second;
 }
 
-
-
-
-
 #endif //FILEREADER_HH
-
