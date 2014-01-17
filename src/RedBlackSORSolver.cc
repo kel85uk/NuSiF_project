@@ -37,7 +37,7 @@ bool RedBlackSORSolver::solve( StaggeredGrid & grid )
 {
    Array<real> & p_ = grid.p();
    Array<real> & rhs_ = grid.rhs();
-   real res =0.0, resid = 1e100, dx_2 = 1.0/(dx*dx), dy_2 = 1.0/(dy*dy);
+   real res =0.0, resid = 1e100, dx_2 = pow(grid.dx(),-2), dy_2 = pow(grid.dy(),-2);
    real numFluid = grid.getNumFluid();
    unsigned int iterno = 0;
    unsigned int i,j;
@@ -54,7 +54,7 @@ bool RedBlackSORSolver::solve( StaggeredGrid & grid )
                                   +(grid.p(i,j,NORTH)+grid.p(i,j,SOUTH)) *dy_2
                                   - rhs_(i,j))
                               / (2.0*(dx_2 + dy_2));
-      #pragma omp parallel for private(i)
+	  #pragma omp parallel for private(i)
       for (j=1; j<=jmax;j++)
           for (i=1+(j)%2;i<=imax;i+=2)
               if (grid.isFluid(i,j))
