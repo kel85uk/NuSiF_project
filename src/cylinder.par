@@ -1,0 +1,69 @@
+#=====================================================================================================================
+#             		 Backward Facing Step
+#=====================================================================================================================
+
+
+# Problem specific Data:
+# ---------------------
+
+name cylinder
+
+boundary_condition_W   inflow    # inflow condition at west boundary
+boundary_velocity_W    1.0       # inflow velocity on the west boundary
+boundary_condition_E   outflow   # outflow condition at east boundary
+
+GX                     0.0			# Body forces (e.g. gravity)
+GY                     0.0			#
+
+Re                     100.0		# Reynolds number
+
+U_INIT                 0.0		   # initial value for velocity in x-direction
+V_INIT                 0.0		   # initial value for velocity in y-direction
+P_INIT                 1.0		   # initial value for pressure
+
+
+# Geometry Data:
+# -------------
+
+xlength                25.0	   # domain size in x-direction
+ylength                10.0		   # domain size in y-direction
+imax                   150		   # number of interior cells in x-direction //Orginal:100
+jmax                   60		   # number of interior cells in y-direction //Orginal:25
+
+CircleX			5.0       # x-coordinate of centre of circle
+CircleY            	5.0       # y-coordinate of centre of circle
+CircleR            	1.0       # radius of circle
+
+# Patch Data:
+# -------------
+
+UpatchX1		  0.0       # x-coordinate of bottom-left point of the patch
+UpatchY1            0.0       # y-coordinate of bottom-left point of the patch
+UpatchX2            25.0      # x-coordinate of top-right point of the patch
+UpatchY2            10.0      # y-coordinate of top-right point of the patch
+UpatchValue         1.0       # value of the patch
+
+# Time Data:
+# ---------
+
+dt                     0.02      # time stepsize
+dtmax                  0.1
+timesteps              200       # number of timesteps
+safetyfactor           0.5       # factor "tau" for timestep size control (<=0 means constant dt)
+
+# Pressure Iteration Data:
+# -----------------------
+
+itermax                1000		   # maximal number of pressure iteration in one time step
+eps                    0.00001		# stopping tolerance for pressure iteration
+omg                    1.85		# relaxation parameter for SOR iteration
+gamma                  0.9		   # upwind differencing factor gamma
+checkfrequency         5         # every n'th SOR iteration the residuum is calculated and checked against eps
+normalizationfrequency 100       # every n'th time step in the fluid solver the pressure is centered around 0
+
+
+# VTK Visualization Data:
+# -----------------------
+outputinterval 5                 # every n'th time step the visualization should be printed to a file
+
+#======================================================================================================================
