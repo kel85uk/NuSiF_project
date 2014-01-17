@@ -3,7 +3,6 @@
 
 #include "StaggeredGrid3D.hh"
 
-
 class SORSolver3D
 {
 public:
@@ -24,11 +23,6 @@ private:
    // copy inner points to boundary
    inline void SetBoundary (Array<real> & p);
 
-   // Evaluate residual
-   inline real Residual (StaggeredGrid3D & grid);   
 };
+
 #endif //SOR_SOLVER_3D_HH
-
-
-
-
