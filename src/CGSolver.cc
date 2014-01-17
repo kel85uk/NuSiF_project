@@ -43,7 +43,7 @@ bool CGSolver::solve( StaggeredGrid & grid )
 	r.fill(0);
 	Ark.fill(0);
 	Residual.fill(0);
-	real resdot, resdotold, rkdot, betak, alphak = 0.;
+	real resdot = 0., resdotold, rkdot, betak, alphak = 0.;
 
 	/** Initialize CG (Calculate residual of initial condition) */
 	SetBoundary(p_);
