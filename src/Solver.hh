@@ -11,7 +11,7 @@ public:
    Solver () {}
 
    // Solve the pressure equation on the staggered grid. Returns true if converged
-   bool solve( StaggeredGrid & grid ) { return false;}
+   virtual bool solve( StaggeredGrid & grid ) { return false;}
 
 };
 #endif //SOLVER_HH
