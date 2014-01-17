@@ -39,30 +39,14 @@ inline void SORSolver3D::SetBoundary (Array<real> & p)
             p(i,j,kmax+1) = p(i,j,kmax); }
 }
 
-// Calculate residual
-inline real SORSolver3D::Residual (StaggeredGrid3D & grid)
-{
-   Array<real> & rhs = grid.rhs();
-   real resid=0.0, dx_2=1.0/(grid.dx()*grid.dx()), dy_2=1.0/(grid.dy()*grid.dy()), dz_2=1.0/(grid.dz()*grid.dz()), res;
-   for (unsigned int i=1; i<=imax;i++)
-       for (unsigned int j=1; j<=jmax;j++)
-           for (unsigned int k=1; k<=kmax;k++)
-               if (grid.isFluid(i,j,k)) {
-                  res  =   (grid.p(i,j,k,EAST) + grid.p(i,j,k,WEST) - 2.0*grid.p(i,j,k,CENTER)) *dx_2
-                         + (grid.p(i,j,k,NORTH) + grid.p(i,j,k,SOUTH) - 2.0*grid.p(i,j,k,CENTER)) *dy_2
-                         + (grid.p(i,j,k,UP) + grid.p(i,j,k,DOWN) - 2.0*grid.p(i,j,k,CENTER)) *dz_2
-                         - rhs(i,j,k) ;       
-                  resid += res*res;  }
-   return (sqrt(resid/ grid.getNumFluid()));
-}
-
 bool SORSolver3D::solve( StaggeredGrid3D & grid )
 {
-   Array<real> & p = grid.p();
-   Array<real> & rhs = grid.rhs();
-   real resid = 1e100, dx_2 = pow(grid.dx(),-2), dy_2 = pow(grid.dy(),-2), dz_2 = pow(grid.dz(),-2);
+   Array<real> & p_ = grid.p();
+   Array<real> & rhs_ = grid.rhs();
+   real res = 0.0,resid = 1e100, dx_2 = pow(grid.dx(),-2), dy_2 = pow(grid.dy(),-2), dz_2 = pow(grid.dz(),-2);
+   real numFluid_ = grid.getNumFluid();
    unsigned int iterno = 0;
-   SetBoundary(p);
+   SetBoundary(p_);
 // SOR iteration
    do {
       iterno++;
@@ -70,16 +54,26 @@ bool SORSolver3D::solve( StaggeredGrid3D & grid )
           for (unsigned int j=1; j<=jmax;j++)
               for (unsigned int k=1; k<=kmax;k++)
                   if (grid.isFluid(i,j,k))
-                     p(i,j,k) = (1.0-omg)* p(i,j,k)
-                                + omg * (  (p(i+1,j,k)+p(i-1,j,k)) *dx_2        
-                                          +(p(i,j+1,k)+p(i,j-1,k)) *dy_2
-                                          +(p(i,j,k+1)+p(i,j,k+1)) *dz_2
-                                          - rhs(i,j,k))
+                     p_(i,j,k) = (1.0-omg)* p_(i,j,k)
+                                + omg * (  (grid.p(i,j,k,EAST) + grid.p(i,j,k,WEST)) *dx_2        
+                                          +(grid.p(i,j,k,NORTH) + grid.p(i,j,k,SOUTH)) *dy_2
+                                          +(grid.p(i,j,k,UP) + grid.p(i,j,k,DOWN)) *dz_2
+                                          - rhs_(i,j,k))
                                       / (2.0*(dx_2 + dy_2 + dz_2));
     
-      SetBoundary(p);
+      SetBoundary(p_);
       if (iterno%checkfrequency == 0 ) {
-         resid = Residual(grid);
+         resid =0.0;
+         for (unsigned int i=1; i<=imax;i++)
+	       for (unsigned int j=1; j<=jmax;j++)
+	           for (unsigned int k=1; k<=kmax;k++)
+	               if (grid.isFluid(i,j,k)) {
+	                  res  =   (grid.p(i,j,k,EAST) + grid.p(i,j,k,WEST) - 2.0*grid.p(i,j,k,CENTER)) *dx_2
+	                         + (grid.p(i,j,k,NORTH) + grid.p(i,j,k,SOUTH) - 2.0*grid.p(i,j,k,CENTER)) *dy_2
+	                         + (grid.p(i,j,k,UP) + grid.p(i,j,k,DOWN) - 2.0*grid.p(i,j,k,CENTER)) *dz_2
+	                         - rhs_(i,j,k) ;       
+	                  resid += res*res;  }
+         resid = sqrt(resid/ numFluid_);
          std::cout<<"Iteration no = "<<iterno<< "\tResidual = "<< resid<<"\n"; } }
   while (resid>=eps && iterno<itermax);   
 
@@ -90,4 +84,3 @@ bool SORSolver3D::solve( StaggeredGrid3D & grid )
       std::cout<<"\nSolution not converged!\n";
   return false;
 }
-
