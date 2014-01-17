@@ -25,7 +25,7 @@ FluidSimulator::FluidSimulator( const FileReader & conf ) :
    else if (conf.getStringParameter("solver") == "Multigrid")
        solver_ = new MultigridSolver(conf);
    else 
-       CHECK_MSG(0, "Invalid Solver. Valid solvers are/n1. SOR/n2. RedBlackSOR\n3. CG\n4. Multigrid");
+       CHECK_MSG(0, "Invalid Solver. Valid solvers are\n1. SOR\n2. RedBlackSOR\n3. CG\n4. Multigrid");
    CHECK_MSG((Re_1 > 0), "Reynolds number (Re) must be greater than 0");
    CHECK_MSG((dt > 0), "dt must be greater than 0");
    CHECK_MSG((tau > 0 && tau <= 1), "safetyfactor must lie between 0 and 1");

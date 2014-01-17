@@ -8,11 +8,10 @@ CGSolver::CGSolver ( unsigned int imax_, unsigned int jmax_, real omg_, real eps
 
 CGSolver::CGSolver ( const FileReader & configuration ):
                      imax(configuration.getIntParameter("imax")), jmax(configuration.getIntParameter("jmax")),
-                     itermax(configuration.getIntParameter("itermax")),
-                     omg(configuration.getRealParameter("omg")), eps(configuration.getRealParameter("eps"))
+                     itermax(configuration.getIntParameter("itermax")),eps(configuration.getRealParameter("eps"))
 {
    std::cout<<"\nCreating CG solver\n";
-   CHECK_MSG((omg <= 1.9 && omg >= 1.7), "omg must be between 1.7 and 1.9");
+//   CHECK_MSG((omg <= 1.9 && omg >= 1.7), "omg must be between 1.7 and 1.9");
    CHECK_MSG((eps > 0), "eps must be greater than 0");
    if (!configuration.find ("checkfrequency")) {
        WARN("\nCheck Frequency not specified\n");
@@ -52,27 +51,85 @@ inline real CGSolver::Residual ( StaggeredGrid & grid)
 
 bool CGSolver::solve( StaggeredGrid & grid )
 {
-   Array<real> & p = grid.p();
-   Array<real> & rhs = grid.rhs();
-   real resid = 1e100, dx_2 = pow(grid.dx(),-2), dy_2 = pow(grid.dy(),-2);
-   unsigned int iterno = 0;
-   SetBoundary(p);
+	int i,j,nfluid;
+	real rdx2,rdy2;
+	real add,beta_2,tol, tol0;
+	real delx = grid.dx();
+	real dely = grid.dy();	
+	Array<real> &U = grid.p();
+	Array<real> &RHS = grid.rhs();
+	rdx2 = 1./delx/delx;
+	rdy2 = 1./dely/dely;
+	nfluid = grid.getNumFluid();
+	real resid = 1e100;
+	unsigned int iterno = 0;
+	/** Set variables for CG */
+	Array<real> Ap = U;
+	Array<real> Res = U;
+	Res.fill(0);
+	Ap.fill(0);
+	Array<real> p = U;
+	p.fill(0);
+	real resdot, resdotold, resdot0, pkdot, betak, alphak = 0.;
+	/** Initialize CG (Calculate residual of initial condition) */
+	SetBoundary(U);
+	for (i=1;i<=imax;i++)
+		for (j=1;j<=jmax;j++)
+			if (grid.isFluid(i,j))   
+		    {
+				Res(i,j) = (U(i+1,j)-2*U(i,j)+U(i-1,j))*rdx2 + (U(i,j+1)-2*U(i,j)+U(i,j-1))*rdy2 - RHS(i,j); // res = b - Ax
+				p(i,j) = Res(i,j); // p = res
+				resdot += Res(i,j)*Res(i,j); // resdot_0
+			}
+	resdot0 = resdot;	
 // CG iteration
    do {
       iterno++;
-      for (unsigned int i=1; i<=imax;i++)
-          for (unsigned int j=1; j<=jmax;j++)
-              if (grid.isFluid(i,j))
-                 p(i,j) = (1.0-omg)* p(i,j)
-                        + omg * (  (grid.p(i,j,EAST)+grid.p(i,j,WEST)) *dx_2
-                                  +(grid.p(i,j,NORTH)+grid.p(i,j,SOUTH)) *dy_2
-                                  - rhs(i,j))
-                              / (2.0*(dx_2 + dy_2));
-    
-      SetBoundary(p);
-      if (iterno%checkfrequency == 0 ) {
-         resid = Residual(grid);
-         std::cout<<"Iteration no = "<<iterno<< "\tResidual = "<< resid<<"\n"; } }
+		/** Start CG iterations */
+		pkdot = 0.;
+		SetBoundary(p);
+		for (i = 1; i <= imax; ++i) /* p_k Update search direction vector */
+			for (j = 1; j <= jmax; ++j)
+				if (grid.isFluid(i,j)){
+					Ap(i,j) = -(p(i+1,j)-2*p(i,j)+p(i-1,j))*rdx2 - (p(i,j+1)-2*p(i,j)+p(i,j-1))*rdy2;
+					pkdot += p(i,j)*(Ap(i,j));
+				}
+		alphak = resdot/pkdot;
+		for (i = 1; i <= imax; ++i)
+			for (j = 1; j <= jmax; ++j)
+				if (grid.isFluid(i,j)){
+					U(i,j) = U(i,j) + alphak*p(i,j); // Update iterate
+				}
+		SetBoundary(U);
+		if (iterno%checkfrequency == 0){
+			for (i = 1; i <= imax; ++i)
+				for (j = 1; j <= jmax; ++j)
+					if (grid.isFluid(i,j)){
+						Res(i,j) = (U(i+1,j)-2*U(i,j)+U(i-1,j))*rdx2 + (U(i,j+1)-2*U(i,j)+U(i,j-1))*rdy2 - RHS(i,j);
+					}
+			std::cout<<"Iteration no = "<<iterno<< "\tResidual = "<< resid<<"\n";
+		} 
+		else{
+			for (i = 1; i <= imax; ++i)
+				for (j = 1; j <= jmax; ++j)
+					if (grid.isFluid(i,j))
+						Res(i,j) = Res(i,j) - alphak*Ap(i,j); // Update residual		
+		}
+		resdotold = resdot; // resdot_k-2
+		resdot = 0.;
+		for (i = 1; i <= imax; ++i) /* resdot_k-1 */
+			for (j = 1; j <= jmax; ++j)
+				if (grid.isFluid(i,j))
+					resdot += Res(i,j)*Res(i,j);
+					
+		betak = resdot/resdotold; // betak = resdot_k/resdot_k-1
+		
+		for (i = 1; i <= imax; ++i) /* p_k Update search direction vector */
+			for (j = 1; j <= jmax; ++j)
+				if (grid.isFluid(i,j))
+					p(i,j) = Res(i,j) + betak*p(i,j);
+		resid = sqrt(resdot/nfluid);
+	}
   while (resid>=eps && iterno<itermax);   
 
   if (iterno<itermax) {
