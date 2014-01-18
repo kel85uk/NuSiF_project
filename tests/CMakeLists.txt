@@ -15,3 +15,4 @@ add_executable( SOR_test3D         ../src/FileReader.cc ../src/Debug.cc ../src/A
 
 add_executable( Derivative_test         ../src/FileReader.cc ../src/Debug.cc ../src/Array.hh  ../src/lodepng.cc ../src/GrayScaleImage.cc ../src/StaggeredGrid.cc ../src/SORSolver.cc ../src/RedBlackSORSolver.cc ../src/CGSolver.cc ../src/MultigridSolver.cc ../src/VTKWriter.cc ../src/FluidSimulator.cc DerivativeTest.cc)
 
+add_executable( Derivative_test3D         ../src/FileReader.cc ../src/Debug.cc ../src/Array.hh ../src/StaggeredGrid3D.cc ../src/SORSolver3D.cc ../src/VTKWriter3D.cc ../src/FluidSimulator3D.cc DerivativeTest3D.cc)
