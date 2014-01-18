@@ -382,7 +382,9 @@ void FluidSimulator3D::composeRHS()
        for (int j=1; j<=jmax; j++)
            for (int k=1; k<=kmax; k++)
                if (grid_.isFluid(i,j,k))
-                  rhs(i,j,k) = (1.0/dt) * ( (f(i,j,k) - f(i,j,k))/dx + (g(i,j,k) - g(i,j,k))/dy + (h(i,j,k) - h(i,j,k))/dz );
+                  rhs(i,j,k) = (1.0/dt) * ( (grid_.f(i,j,k,CENTER) - grid_.f(i,j,k,WEST))/dx
+                                          + (grid_.g(i,j,k,CENTER) - grid_.g(i,j,k,SOUTH))/dy 
+                                          + (grid_.h(i,j,k,CENTER) - grid_.h(i,j,k,DOWN))/dz );
 }
 
 void FluidSimulator3D::updateVelocities()
