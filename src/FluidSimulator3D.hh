@@ -1,17 +1,17 @@
 #ifndef __FLUID_SIMULATOR_3D_H__
 #define __FLUID_SIMULATOR_3D_H__
 
-
 #include "FileReader.hh"
 #include "StaggeredGrid3D.hh"
 #include "SORSolver3D.hh"
+
 class FluidSimulator3D
 {
   public:
       FluidSimulator3D( const FileReader & conf );
 
       /// Simulates a given time-length
-      void simulate             ( real duration              );
+      void simulate             ( real duration );
       void simulateTimeStepCount();
 
 
