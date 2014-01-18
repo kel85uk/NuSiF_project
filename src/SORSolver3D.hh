@@ -2,8 +2,9 @@
 #define SOR_SOLVER_3D_HH
 
 #include "StaggeredGrid3D.hh"
+#include "Solver3D.hh"
 
-class SORSolver3D
+class SORSolver3D: public Solver3D
 {
 public:
    // Constructor to manually create SORSolver
