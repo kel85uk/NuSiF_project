@@ -5,6 +5,8 @@
 #include "StaggeredGrid3D.hh"
 #include "Solver3D.hh"
 #include "SORSolver3D.hh"
+#include "RedBlackSORSolver3D.hh"
+#include "CGSolver3D.hh"
 
 class FluidSimulator3D
 {
@@ -24,7 +26,7 @@ class FluidSimulator3D
   private:
       std::string name;
       StaggeredGrid3D grid_;
-      SORSolver3D* solver_;
+      Solver3D* solver_;
       real gamma, Re_1, tau;
       real GX, GY, GZ;
       int noOfTimeSteps, timeStepNumber, normFrequency;
