@@ -33,45 +33,39 @@ inline void SORSolver::SetBoundary ( Array<real> & p )
         p(imax + 1,j) = p(imax,j); }
 }
 
-// Calculate residual
-inline real SORSolver::Residual ( StaggeredGrid & grid)
-{
-   Array<real> & rhs = grid.rhs();
-   real resid=0.0, dx_2=1.0/(grid.dx()*grid.dx()), dy_2=1.0/(grid.dy()*grid.dy()), res;
-   for (unsigned int i=1; i<=imax;i++)
-       for (unsigned int j=1; j<=jmax;j++)
-           if (grid.isFluid(i,j)) {
-              res  =   (grid.p(i,j,EAST) + grid.p(i,j,WEST) - 2.0*grid.p(i,j,CENTER)) *dx_2
-                     + (grid.p(i,j,NORTH) + grid.p(i,j,SOUTH) - 2.0*grid.p(i,j,CENTER)) *dy_2
-                     - rhs(i,j) ;       
-           resid += res*res;  }
-   return (sqrt(resid/grid.getNumFluid()));
-}
-
-
-
 bool SORSolver::solve( StaggeredGrid & grid )
 {
-   Array<real> & p = grid.p();
-   Array<real> & rhs = grid.rhs();
-   real resid = 1e100, dx_2 = pow(grid.dx(),-2), dy_2 = pow(grid.dy(),-2);
+   Array<real> & p_ = grid.p();
+   Array<real> & rhs_ = grid.rhs();
+   real res=0.0,resid = 1e100, dx_2 = pow(grid.dx(),-2), dy_2 = pow(grid.dy(),-2);
+   real numFluid = grid.getNumFluid();
    unsigned int iterno = 0;
-   SetBoundary(p);
+   SetBoundary(p_);
 // SOR iteration
    do {
       iterno++;
       for (unsigned int i=1; i<=imax;i++)
           for (unsigned int j=1; j<=jmax;j++)
               if (grid.isFluid(i,j))
-                 p(i,j) = (1.0-omg)* p(i,j)
+                 p_(i,j) = (1.0-omg)* p_(i,j)
                         + omg * (  (grid.p(i,j,EAST)+grid.p(i,j,WEST)) *dx_2
                                   +(grid.p(i,j,NORTH)+grid.p(i,j,SOUTH)) *dy_2
-                                  - rhs(i,j))
+                                  - rhs_(i,j))
                               / (2.0*(dx_2 + dy_2));
     
-      SetBoundary(p);
+      SetBoundary(p_);
+      
+      // Calculate residual
       if (iterno%checkfrequency == 0 ) {
-         resid = Residual(grid);
+          res = 0.0, resid = 0.0;
+          for (unsigned int i=1; i<=imax;i++)
+              for (unsigned int j=1; j<=jmax;j++)
+                  if (grid.isFluid(i,j)) {
+                      res  =   (grid.p(i,j,EAST) + grid.p(i,j,WEST) - 2.0*p_(i,j)) *dx_2
+                             + (grid.p(i,j,NORTH) + grid.p(i,j,SOUTH) - 2.0*p_(i,j)) *dy_2
+                             - rhs_(i,j) ;       
+                      resid += res*res;  }
+         resid = sqrt(resid/numFluid);
          std::cout<<"Iteration no = "<<iterno<< "\tResidual = "<< resid<<"\n"; } }
   while (resid>=eps && iterno<itermax);   
 
