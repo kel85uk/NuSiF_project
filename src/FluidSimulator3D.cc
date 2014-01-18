@@ -25,11 +25,11 @@ FluidSimulator3D::FluidSimulator3D( const FileReader & conf ) :
 {
    if (conf.getStringParameter("solver") == "SOR")
        solver_ = new SORSolver3D(conf);
-/*   else if (conf.getStringParameter("solver") == "RedBlackSOR")
+   else if (conf.getStringParameter("solver") == "RedBlackSOR")
        solver_ = new RedBlackSORSolver3D(conf);
    else if (conf.getStringParameter("solver") == "CG")
        solver_ = new CGSolver3D(conf);
-   else if (conf.getStringParameter("solver") == "Multigrid")
+/*   else if (conf.getStringParameter("solver") == "Multigrid")
        solver_ = new MultigridSolver3D(conf);
 */   else 
        CHECK_MSG(0, "Invalid Solver. Valid solvers are/n1. SOR/n2. RedBlackSOR\n3. CG\n4. Multigrid");
