@@ -10,13 +10,13 @@ name dcavity3D
 
 # per default all boundaries are NOSLIP if not otherwise stated
 
-boundary_velocity_N 1.0          # constant velocity u_bar of the lid
+boundary_velocity_N1 1.0          # constant velocity u_bar of the lid
 
 GX    0.0                        # Body forces (e.g. gravity)
 GY    0.0                        #
 GZ    0.0                        #
 
-Re    10                         # Reynolds number
+Re    10.0                         # Reynolds number
    
 U_INIT    0.0                    # initial value for velocity in x-direction
 V_INIT    0.0                    # initial value for velocity in y-direction
@@ -45,7 +45,7 @@ safetyfactor 0.5                  # factor "tau" for timestep size control (<=0 
 
 # Pressure Iteration Data:
 # -----------------------
-
+solver	           SOR
 itermax                10000      # maximal number of pressure iteration in one time step
 eps                    0.0001     # stopping tolerance for pressure iteration
 omg                    1.8        # relaxation parameter for SOR iteration

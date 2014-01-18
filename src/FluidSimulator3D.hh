@@ -1,17 +1,21 @@
 #ifndef __FLUID_SIMULATOR_3D_H__
 #define __FLUID_SIMULATOR_3D_H__
 
-
 #include "FileReader.hh"
 #include "StaggeredGrid3D.hh"
+#include "Solver3D.hh"
 #include "SORSolver3D.hh"
+#include "RedBlackSORSolver3D.hh"
+#include "CGSolver3D.hh"
+
 class FluidSimulator3D
 {
   public:
       FluidSimulator3D( const FileReader & conf );
+      ~FluidSimulator3D();
 
       /// Simulates a given time-length
-      void simulate             ( real duration              );
+      void simulate             ( real duration );
       void simulateTimeStepCount();
 
 
@@ -22,7 +26,7 @@ class FluidSimulator3D
   private:
       std::string name;
       StaggeredGrid3D grid_;
-      SORSolver3D solver_;
+      Solver3D* solver_;
       real gamma, Re_1, tau;
       real GX, GY, GZ;
       int noOfTimeSteps, timeStepNumber, normFrequency;
@@ -33,8 +37,12 @@ class FluidSimulator3D
       
       std::string boundary_condition_N, boundary_condition_S, boundary_condition_E,
                   boundary_condition_W, boundary_condition_U, boundary_condition_D;
-      real boundary_velocity_N, boundary_velocity_S, boundary_velocity_E,
-           boundary_velocity_W, boundary_velocity_U, boundary_velocity_D; 
+      real boundary_velocity_N1, boundary_velocity_N2, boundary_velocity_N3,
+           boundary_velocity_S1, boundary_velocity_S2, boundary_velocity_S3, 
+           boundary_velocity_E1, boundary_velocity_E2, boundary_velocity_E3,
+           boundary_velocity_W1, boundary_velocity_W2, boundary_velocity_W3, 
+           boundary_velocity_U1, boundary_velocity_U2, boundary_velocity_U3, 
+           boundary_velocity_D1, boundary_velocity_D2, boundary_velocity_D3; 
 
       Array<real> &u = grid_.u();
       Array<real> &v = grid_.v();

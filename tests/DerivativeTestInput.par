@@ -33,11 +33,11 @@ safetyfactor 0.9
 
 # Pressure Iteration Data:
 # -----------------------
-
+solver                 SOR
 itermax                1000		# maximal number of pressure iteration in one time step
 eps                    1e-4         # stopping tolerance for pressure iteration
 omg	                 1.8		# relaxation parameter for SOR iteration
-gamma                  0		# upwind differencing factor gamma
+gamma                  0.0		# upwind differencing factor gamma
 checkfrequency         5		# every n'th time the residuum is calculated and checked against eps
 normalizationfrequency 100		# every n'th time the pressure is centered around 0
 

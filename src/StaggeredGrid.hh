@@ -98,12 +98,20 @@ inline real& StaggeredGrid::u( int x, int y, Direction dir)
 {
    switch(dir)
    {
-      case NORTH: if (!isfluid_(x,y+1))
-                     u_(x,y+1) = -u_(x,y);
+      case NORTH: if (!(isfluid_(x,y+1) || isfluid_(x+1,y+1)))
+                      u_(x,y+1) = -u_(x,y);
+                  else if (isfluid_(x,y+1) && isfluid_(x+1,y+1))
+                      return u_(x,y+1);
+                  else
+                      u_(x,y+1) = 0;
                   return u_(x,y+1);
-      case SOUTH: if (!isfluid_(x,y-1))
-                     u_(x,y-1) = -u_(x,y);
-                  return u_(x,y-1);
+      case SOUTH:  if (!(isfluid_(x,y-1) || isfluid_(x+1,y-1)))
+                      u_(x,y-1) = -u_(x,y);
+                  else if (isfluid_(x,y-1) && isfluid_(x+1,y-1))
+                      return u_(x,y-1);
+                  else
+                      u_(x,y-1) = 0;
+                  return u_(x,y+1);
       case EAST:  if (isfluid_(x+1,y))
                      return u(x+1,y,CENTER);
                   else
@@ -119,6 +127,7 @@ inline real& StaggeredGrid::u( int x, int y, Direction dir)
                   return u_(x,y);
    }
 }
+
 inline real& StaggeredGrid::v(int x, int y, Direction dir)
 {
    switch(dir)
@@ -131,11 +140,19 @@ inline real& StaggeredGrid::v(int x, int y, Direction dir)
       case SOUTH: if (!isfluid_(x,y-1))
                      v_(x,y-1)=0.0;
                   return v_(x,y-1);
-      case EAST:  if (!isfluid_(x+1,y))
-                     v_(x+1,y)=-v_(x,y);
+      case EAST: if (!(isfluid_(x+1,y) || isfluid_(x+1,y+1)))
+                      v_(x+1,y) = -v_(x,y);
+                  else if (isfluid_(x+1,y) && isfluid_(x+1,y+1))
+                      return v_(x+1,y);
+                  else
+                      v_(x+1,y) = 0;
                   return v_(x+1,y);
-      case WEST:  if (isfluid_(x-1,y))
-                     v_(x-1,y)=-v_(x,y);
+      case WEST: if (!(isfluid_(x-1,y) || isfluid_(x-1,y+1)))
+                      v_(x-1,y) = -v_(x,y);
+                  else if (isfluid_(x-1,y) && isfluid_(x-1,y+1))
+                      return v_(x-1,y);
+                  else
+                      v_(x-1,y) = 0;
                   return v_(x-1,y);
       default:    if (!isfluid_(x,y+1))
                      v_(x,y) = 0.0;

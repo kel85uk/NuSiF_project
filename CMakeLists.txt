@@ -4,7 +4,7 @@ project ( NuSiF )
 
 
 # Compiler Flags
-set( CMAKE_CXX_FLAGS "-std=c++0x -Wall -Wconversion -Wshadow" )
+set( CMAKE_CXX_FLAGS "-std=c++0x -fopenmp -Wall -Wconversion -Wshadow" )
 
 
 # Default build type

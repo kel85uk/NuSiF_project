@@ -63,11 +63,10 @@ public:
    // initialize the whole array with a constant value
    void fill( T value );
 
-
    // return total size of the array
    int getSize() const;
 
-   // return xSize for dimension==0, ySize for dimension==1 and zSize for dimension==2
+   // return xSize for dimension==1, ySize for dimension==2 and zSize for dimension==3
    // other dimension values are not allowed
    int getSize(int dimension ) const;
 
@@ -77,7 +76,6 @@ public:
 
 };
 
-
 //===================================================================================================================
 //
 //  Constructors
@@ -86,18 +84,18 @@ public:
 
 // For 1D Array
 template <typename T>
-Array<T>::Array( int xSize ):Data(xSize), Xsize(xSize),  noOfDim(0)
+Array<T>::Array( int xSize ):Data(xSize), Xsize(xSize), Ysize(1), Zsize(1), noOfDim(1)
 {}
 
 // For 2D Array
 template <typename T>
-Array<T>::Array( int xSize, int ySize ):Data(xSize*ySize), Xsize(xSize), Ysize(ySize),  noOfDim(1)
+Array<T>::Array( int xSize, int ySize ):Data(xSize*ySize), Xsize(xSize), Ysize(ySize), Zsize(1), noOfDim(2)
 {}
 
 // For 3D Array
 template <typename T>
 Array<T>::Array( int xSize, int ySize, int zSize ):Data(xSize*ySize*zSize), Xsize(xSize), Ysize(ySize),
-                                                Zsize(zSize), noOfDim(2)
+                                                Zsize(zSize), noOfDim(3)
 {}
 
 // Destructor
@@ -116,8 +114,8 @@ Array<T>::~Array()
 template <typename T>
 inline T& Array<T>::operator ()(int i)
 {
-   ASSERT_MSG(0 == noOfDim, "Array is not 1D");
-   ASSERT_MSG(i<Xsize, "Array out of bounds");
+   ASSERT_MSG(noOfDim >0 && noOfDim <= 3>, "Array is not 1D");
+   ASSERT_MSG(i<Xsize*Ysize*Zsize, "Array out of bounds");
    return Data[i];
 }
 
@@ -125,7 +123,7 @@ inline T& Array<T>::operator ()(int i)
 template <typename T>
 inline T& Array<T>::operator ()(int i,int j)
 {
-   ASSERT_MSG(1 == noOfDim, "Array is not 2D");
+   ASSERT_MSG(2 == noOfDim, "Array is not 2D");
    ASSERT_MSG(i<Xsize && j<Ysize, "Array out of bounds");
    return Data[i*(Ysize) + j];
 }
@@ -134,7 +132,7 @@ inline T& Array<T>::operator ()(int i,int j)
 template <typename T>
 inline T& Array<T>::operator ()(int i, int j, int k)
 {
-   ASSERT_MSG(2 == noOfDim, "Array is not 3D");
+   ASSERT_MSG(3 == noOfDim, "Array is not 3D");
    ASSERT_MSG(i<Xsize && j<Ysize && k<Zsize, "Array out of bounds");
    return Data[i*Ysize*Zsize + j*Zsize + k];
 }
@@ -143,7 +141,7 @@ inline T& Array<T>::operator ()(int i, int j, int k)
 template <typename T>
 inline const T& Array<T>::operator ()(int i) const
 {
-   ASSERT_MSG(0 == noOfDim, "Array is not 1D");
+   ASSERT_MSG(1 == noOfDim, "Array is not 1D");
    ASSERT_MSG(i<Xsize, "Array out of bounds");
    return Data[i];
 }
@@ -152,7 +150,7 @@ inline const T& Array<T>::operator ()(int i) const
 template <typename T>
 inline const T& Array<T>::operator ()(int i,int j) const
 {
-   ASSERT_MSG(1 == noOfDim, "Array is not 2D");
+   ASSERT_MSG(2 == noOfDim, "Array is not 2D");
    ASSERT_MSG(i<Xsize && j<Ysize, "Array out of bounds");
    return Data[i*(Ysize) + j];
 }
@@ -161,7 +159,7 @@ inline const T& Array<T>::operator ()(int i,int j) const
 template <typename T>
 inline const T& Array<T>::operator ()(int i, int j, int k) const
 {
-   ASSERT_MSG(2 == noOfDim, "Array is not 3D");
+   ASSERT_MSG(3 == noOfDim, "Array is not 3D");
    ASSERT_MSG(i<Xsize && j<Ysize && k<Zsize, "Array out of bounds");
    return Data[i*Ysize*Zsize + j*Zsize + k];
 }
@@ -217,17 +215,17 @@ const void Array<T>::print() const
    //      -> the line with highest y-value is printed first
    switch(noOfDim)
    {
-      case 0: for (int i=0; i<Xsize; i++)
+      case 1: for (int i=0; i<Xsize; i++)
                  std::cout<< std::left<< std::setprecision(6)<< std::setw(12)<<Data[i];
 
               break;
 
-      case 1: for (int j=Ysize-1; j>=0; j--) {
+      case 2: for (int j=Ysize-1; j>=0; j--) {
                  for (int i=0; i<Xsize; i++)
                      std::cout<< std::left<< std::setprecision(6)<< std::setw(12)<<Data[i*Ysize+j];
                  std::cout<<"\n";}
               break;
-      case 2: for (int k=0; k<Zsize; k++){
+      case 3: for (int k=0; k<Zsize; k++){
                  std::cout<<"\nz = "<< k << "\n";
                  for (int j=Ysize-1; j>=0; j--) {
                     for (int i=0; i<Xsize; i++)
@@ -245,9 +243,9 @@ int Array<T>::getSize( int dimension ) const
    CHECK_MSG(dimension <= noOfDim, "Invalid request for dimension");
    switch(dimension)
    {
-      case 0: return(Xsize);
-      case 1: return(Ysize);
-      case 2: return(Zsize);
+      case 1: return(Xsize);
+      case 2: return(Ysize);
+      case 3: return(Zsize);
       default:return 0;
    }
 }
@@ -258,12 +256,11 @@ int Array<T>::getSize() const
 {
    switch(noOfDim)
    {
-      case 0: return(Xsize);
-      case 1: return(Xsize*Ysize);
-      case 2: return(Xsize*Ysize*Zsize);
+      case 1: return(Xsize);
+      case 2: return(Xsize*Ysize);
+      case 3: return(Xsize*Ysize*Zsize);
       default:return 0;
    }
 }
 
 #endif //ARRAY_HH
-

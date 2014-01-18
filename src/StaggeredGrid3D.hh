@@ -59,10 +59,13 @@ public:
    inline bool isFluid(const int x, const int y, const int z) {return isfluid_(x,y,z);}
 
    inline int getNumFluid();
-   inline real u( int x, int y, int z, Direction dir);
-   inline real v( int x, int y, int z, Direction dir);
-   inline real w( int x, int y, int z, Direction dir);
-   inline real p( int x, int y, int z, Direction dir);
+   inline real& u( int x, int y, int z, Direction dir);
+   inline real& v( int x, int y, int z, Direction dir);
+   inline real& w( int x, int y, int z, Direction dir);
+   inline real& f( int x, int y, int z, Direction dir);
+   inline real& g( int x, int y, int z, Direction dir);
+   inline real& h( int x, int y, int z, Direction dir);
+   inline real& p( int x, int y, int z, Direction dir);
 
 
 protected:
@@ -103,168 +106,234 @@ inline int StaggeredGrid3D::getNumFluid()
    return numFluid_;
 }
 
-inline real StaggeredGrid3D::u( int x, int y, int z, Direction dir)
+inline real& StaggeredGrid3D::u( int x, int y, int z, Direction dir)
 {
    switch(dir)
    {
-      case NORTH: if (isfluid_(x,y+1,z))
-                     return u_(x,y+1,z);
+      case NORTH: if (!(isfluid_(x,y+1,z) || isfluid_(x+1,y+1,z)))
+                      u_(x,y+1,z) = -u_(x,y,z);
+                  else if (isfluid_(x,y+1,z) && isfluid_(x+1,y+1,z))
+                      return u_(x,y+1,z);
                   else
-                     return -u_(x,y,z);
-      case SOUTH: if (isfluid_(x,y-1,z))
-                     return u_(x,y-1,z);
+                      u_(x,y+1,z) = 0;
+                  return u_(x,y+1);
+      case SOUTH:  if (!(isfluid_(x,y-1,z) || isfluid_(x+1,y-1,z)))
+                      u_(x,y-1,z) = -u_(x,y,z);
+                  else if (isfluid_(x,y-1,z) && isfluid_(x+1,y-1,z))
+                      return u_(x,y-1,z);
                   else
-                     return -u_(x,y,z);
+                      u_(x,y-1,z) = 0;
+                  return u_(x,y+1,z);
       case EAST:  if (isfluid_(x+1,y,z))
                      return u(x+1,y,z,CENTER);
                   else
-                     return 0.0;
+                     u_(x+1,y,z) = 0.0;
+                     return u_(x+1,y,z);
       case WEST:  if (isfluid_(x-1,y,z))
                      return u_(x-1,y,z);
                   else
-                     return 0.0;
-      case UP:  if (isfluid_(x,y,z+1))
-                     return u_(x,y,z+1);
+                     u_(x-1,y,z) = 0.0;
+                     return u_(x-1,y,z);
+      case UP: if (!(isfluid_(x,y,z+1) || isfluid_(x,y+1,z+1)))
+                      u_(x,y,z+1) = -u_(x,y,z);
+                  else if (isfluid_(x,y,z+1) && isfluid_(x,y+1,z+1))
+                      return u_(x,y,z+1);
                   else
-                     return 0.0;
-      case DOWN:  if (isfluid_(x,y,z-1))
-                     return u_(x,y,z-1);
+                      u_(x,y,z+1) = 0;
+                  return u_(x,y,z+1);
+      case DOWN: if (!(isfluid_(x,y,z-1) || isfluid_(x+1,y,z-1)))
+                      u_(x,y,z-1) = -u_(x,y,z);
+                  else if (isfluid_(x,y,z-1) && isfluid_(x+1,y,z-1))
+                      return u_(x,y,z-1);
                   else
-                     return 0.0;
+                      u_(x,y,z-1) = 0;
+                  return u_(x,y,z-1);
       default:    if (isfluid_(x+1,y,z))
                      return u_(x,y,z);
                   else 
-                     return 0.0;
+                     u_(x,y,z) = 0.0;
+                     return u_(x,y,z);
    }
 }
 
-inline real StaggeredGrid3D::v(int x, int y, int z, Direction dir)
+inline real& StaggeredGrid3D::v(int x, int y, int z, Direction dir)
 {
    switch(dir)
    {
       case NORTH: if (isfluid_(x,y+1,z))
                      return v(x,y+1,z,CENTER);
                   else
-                     return 0.0;
+                     v_(x,y+1,z)=0;
+                     return v_(x,y+1,z);
       case SOUTH: if (isfluid_(x,y-1,z))
                      return v_(x,y-1,z);
                   else
-                     return 0.0;
-      case EAST:  if (isfluid_(x+1,y,z))
-                     return v_(x+1,y,z);
+                     v_(x,y-1,z) = 0.0;
+                     return v_(x,y-1,z);
+      case EAST: if (!(isfluid_(x+1,y,z) || isfluid_(x+1,y+1,z)))
+                      v_(x+1,y,z) = -v_(x,y,z);
+                  else if (isfluid_(x+1,y,z) && isfluid_(x+1,y+1,z))
+                      return v_(x+1,y,z);
                   else
-                     return -v_(x,y,z);
-      case WEST:  if (isfluid_(x-1,y,z))
-                     return v_(x-1,y,z);
+                      v_(x+1,y,z) = 0;
+                  return v_(x+1,y,z);
+      case WEST: if (!(isfluid_(x-1,y,z) || isfluid_(x-1,y+1,z)))
+                      v_(x-1,y,z) = -v_(x,y,z);
+                  else if (isfluid_(x-1,y,z) && isfluid_(x-1,y+1,z))
+                      return v_(x-1,y,z);
                   else
-                     return -v_(x,y,z);
-      case UP:  if (isfluid_(x,y,z+1))
-                     return v_(x,y,z+1);
+                      v_(x-1,y,z) = 0;
+                  return v_(x-1,y,z);
+      case UP: if (!(isfluid_(x,y,z+1) || isfluid_(x,y+1,z+1)))
+                      v_(x,y,z+1) = -v_(x,y,z);
+                  else if (isfluid_(x,y,z+1) && isfluid_(x,y+1,z+1))
+                      return v_(x,y,z+1);
                   else
-                     return 0.0;
-      case DOWN:  if (isfluid_(x,y,z-1))
-                     return v_(x,y,z-1);
+                      v_(x,y,z+1) = 0;
+                  return v_(x,y,z+1);
+      case DOWN: if (!(isfluid_(x,y,z-1) || isfluid_(x,y+1,z-1)))
+                      v_(x,y,z-1) = -v_(x,y,z);
+                  else if (isfluid_(x,y,z-1) && isfluid_(x,y+1,z-1))
+                      return v_(x,y,z-1);
                   else
-                     return 0.0;
+                      v_(x,y,z-1) = 0;
+                  return v_(x,y,z-1);
       default:    if (isfluid_(x,y+1,z))
                      return v_(x,y,z);
                   else 
-                     return 0.0;
+                     v_(x,y,z) = 0.0;
+                     return v_(x,y,z);
    }
 }
 
-inline real StaggeredGrid3D::w(int x, int y, int z, Direction dir)
+inline real& StaggeredGrid3D::w(int x, int y, int z, Direction dir)
 {
    switch(dir)
    {
-      case NORTH: if (isfluid_(x,y+1,z))
-                     return w_(x,y+1,z);
+      case NORTH: if (!(isfluid_(x,y+1,z) || isfluid_(x,y+1,z+1)))
+                      w_(x,y+1,z) = -w_(x,y,z);
+                  else if (isfluid_(x,y+1,z) && isfluid_(x,y+1,z+1))
+                      return w_(x,y+1,z);
                   else
-                     return 0.0;
-      case SOUTH: if (isfluid_(x,y-1,z))
-                     return w_(x,y-1,z);
+                      w_(x,y+1,z) = 0;
+                  return w_(x,y+1);
+      case SOUTH:  if (!(isfluid_(x,y-1,z) || isfluid_(x,y-1,z+1)))
+                      w_(x,y-1,z) = -w_(x,y,z);
+                  else if (isfluid_(x,y-1,z) && isfluid_(x,y-1,z+1))
+                      return w_(x,y-1,z);
                   else
-                     return 0.0;
-      case EAST:  if (isfluid_(x+1,y,z))
-                     return w_(x+1,y,z);
+                      w_(x,y-1,z) = 0;
+                  return w_(x,y+1,z);
+      case EAST: if (!(isfluid_(x+1,y,z) || isfluid_(x+1,y,z+1)))
+                      w_(x+1,y,z) = -w_(x,y,z);
+                  else if (isfluid_(x+1,y,z) && isfluid_(x+1,y,z+1))
+                      return w_(x+1,y,z);
                   else
-                     return -w_(x,y,z);
-      case WEST:  if (isfluid_(x-1,y,z))
-                     return w_(x-1,y,z);
+                      w_(x+1,y,z) = 0;
+                  return w_(x+1,y,z);
+      case WEST: if (!(isfluid_(x-1,y,z) || isfluid_(x-1,y,z+1)))
+                      w_(x-1,y,z) = -w_(x,y,z);
+                  else if (isfluid_(x-1,y,z) && isfluid_(x-1,y,z+1))
+                      return w_(x-1,y,z);
                   else
-                     return -w_(x,y,z);
+                      w_(x-1,y,z) = 0;
+                  return w_(x-1,y,z);
       case UP:  if (isfluid_(x,y,z+1))
                      return w(x,y,z+1,CENTER);
                   else
-                     return 0.0;
+                     w_(x,y,z+1) = 0.0;
+                     return w_(x,y,z+1);
       case DOWN:  if (isfluid_(x,y,z-1))
                      return w_(x,y,z-1);
                   else
-                     return 0.0;
+                     w_(x,y,z-1) = 0.0;
+                     return w_(x,y,z-1);
       default:    if (isfluid_(x,y,z+1))
                      return w_(x,y,z);
-                  else 
-                     return 0.0;
+                  else
+                     w_(x,y,z) = 0.0;
+                     return w_(x,y,z);
    }
 }
 
-inline real StaggeredGrid3D::p(int x, int y, int z, Direction dir)
+inline real& StaggeredGrid3D::f(int x, int y, int z, Direction dir)
+{
+   switch(dir)
+   {
+      case CENTER: if (isfluid_(x+1,y,z))
+                     return f_(x,y,z);
+                  else
+                     return u_(x,y,z);
+      case WEST:  if (isfluid_(x-1,y,z))
+                     return f_(x-1,y,z);
+                  else
+                     return u_(x-1,y,z);
+      default:    return f_(x,y,z);
+   }
+}
+
+inline real& StaggeredGrid3D::g(int x, int y, int z, Direction dir)
+{
+   switch(dir)
+   {
+      case CENTER: if (isfluid_(x,y+1,z))
+                     return g_(x,y,z);
+                  else
+                     return v_(x,y,z);
+      case SOUTH: if (isfluid_(x,y-1,z))
+                     return g_(x,y-1,z);
+                  else
+                     return v_(x,y-1,z);
+      default:    return g_(x,y,z);
+   }
+}
+
+inline real& StaggeredGrid3D::h(int x, int y, int z, Direction dir)
+{
+   switch(dir)
+   {
+      case CENTER: if (isfluid_(x,y,z+1))
+                     return h_(x,y,z);
+                  else
+                     return w_(x,y,z);
+      case DOWN: if (isfluid_(x,y,z-1))
+                     return h_(x,y,z-1);
+                  else
+                     return w_(x,y,z-1);
+      default:    return h_(x,y,z);
+   }
+}
+
+inline real& StaggeredGrid3D::p(int x, int y, int z, Direction dir)
 {
    switch(dir)
    {
       case NORTH: if (isfluid_(x,y+1,z))
                      return p_(x,y+1,z);
-                  else if (isfluid_(x+1,y+1,z))
-                     return 0.5*(p_(x,y,z) + p_(x+1,y+1,z));
-                  else if (isfluid_(x-1,y+1,z))
-                     return 0.5*(p_(x,y,z) + p_(x-1,y+1,z));
                   else
                      return p_(x,y,z);
       case SOUTH: if (isfluid_(x,y-1,z))
                      return p_(x,y-1,z);
-                  else if (isfluid_(x+1,y-1,z))
-                     return 0.5*(p_(x,y,z) + p_(x+1,y-1,z));
-                  else if (isfluid_(x-1,y-1,z))
-                     return 0.5*(p_(x,y,z) + p_(x-1,y-1,z));
                   else
                      return p_(x,y,z);
       case EAST:  if (isfluid_(x+1,y,z))
                      return p_(x+1,y,z);
-                  else if (isfluid_(x+1,y+1,z))
-                     return 0.5*(p_(x,y,z) + p_(x+1,y+1,z));
-                  else if (isfluid_(x+1,y-1,z))
-                     return 0.5*(p_(x,y,z) + p_(x+1,y-1,z));
                   else
                      return p_(x,y,z);
       case WEST:  if (isfluid_(x-1,y,z))
                      return p_(x-1,y,z);
-                  else if (isfluid_(x-1,y+1,z))
-                     return 0.5*(p_(x,y,z) + p_(x-1,y+1,z));
-                  else if (isfluid_(x-1,y-1,z))
-                     return 0.5*(p_(x,y,z) + p_(x-1,y-1,z));
                   else
                      return p_(x,y,z);
       case UP:  if (isfluid_(x,y,z+1))
                      return p_(x,y,z+1);
-                  else if (isfluid_(x+1,y+1,z))
-                     return 0.5*(p_(x,y,z) + p_(x+1,y+1,z));
-                  else if (isfluid_(x+1,y-1,z))
-                     return 0.5*(p_(x,y,z) + p_(x+1,y-1,z));
                   else
                      return p_(x,y,z);
       case DOWN:  if (isfluid_(x,y,z-1))
                      return p_(x,y,z-1);
-                  else if (isfluid_(x-1,y+1,z))
-                     return 0.5*(p_(x,y,z) + p_(x-1,y+1,z));
-                  else if (isfluid_(x-1,y-1,z))
-                     return 0.5*(p_(x,y,z) + p_(x-1,y-1,z));
                   else
                      return p_(x,y,z);
       default:    return p_(x,y,z);
    }
 }
 
-
-
 #endif //STAGGERED_GRID_3D_HH
-

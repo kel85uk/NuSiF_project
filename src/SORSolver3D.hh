@@ -2,9 +2,9 @@
 #define SOR_SOLVER_3D_HH
 
 #include "StaggeredGrid3D.hh"
+#include "Solver3D.hh"
 
-
-class SORSolver3D
+class SORSolver3D: public Solver3D
 {
 public:
    // Constructor to manually create SORSolver
@@ -24,11 +24,6 @@ private:
    // copy inner points to boundary
    inline void SetBoundary (Array<real> & p);
 
-   // Evaluate residual
-   inline real Residual (StaggeredGrid3D & grid);   
 };
+
 #endif //SOR_SOLVER_3D_HH
-
-
-
-

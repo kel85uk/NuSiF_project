@@ -1,17 +1,17 @@
-#include "SORSolver3D.hh"
+#include "RedBlackSORSolver3D.hh"
 
-SORSolver3D::SORSolver3D ( unsigned int imax_, unsigned int jmax_, unsigned int kmax_, real omg_, real eps_, unsigned int itermax_):
+RedBlackSORSolver3D::RedBlackSORSolver3D ( unsigned int imax_, unsigned int jmax_, unsigned int kmax_, real omg_, real eps_, unsigned int itermax_):
                      imax(imax_), jmax(jmax_), kmax(kmax_), itermax(itermax_), checkfrequency(1), omg(omg_), eps(eps_)
 {
-   std::cout<<"\nCreating SOR solver\n";
+   std::cout<<"\nCreating RedBlackSOR solver\n";
 }
 
-SORSolver3D::SORSolver3D ( const FileReader & configuration ):
+RedBlackSORSolver3D::RedBlackSORSolver3D ( const FileReader & configuration ):
                      imax(configuration.getIntParameter("imax")), jmax(configuration.getIntParameter("jmax")),
                      kmax(configuration.getIntParameter("kmax")), itermax(configuration.getIntParameter("itermax")),
                      omg(configuration.getRealParameter("omg")), eps(configuration.getRealParameter("eps"))
 {
-   std::cout<<"\nCreating SOR solver\n";
+   std::cout<<"\nCreating RedBlackSOR solver\n";
    CHECK_MSG((omg <= 1.9 && omg >= 1.7), "omg must be between 1.7 and 1.9");
    CHECK_MSG((eps > 0), "eps must be greater than 0");
    if (!configuration.find ("checkfrequency")) {
@@ -23,7 +23,7 @@ SORSolver3D::SORSolver3D ( const FileReader & configuration ):
    CHECK_MSG((itermax > 0), "Max number of iterations (itermax) must be greater than 0");
 }
 
-inline void SORSolver3D::SetBoundary (Array<real> & p)
+inline void RedBlackSORSolver3D::SetBoundary (Array<real> & p)
 {
     for (unsigned int i=0; i<=imax;i++)
         for (unsigned int k=0; k<=kmax;k++) {
@@ -39,20 +39,33 @@ inline void SORSolver3D::SetBoundary (Array<real> & p)
             p(i,j,kmax+1) = p(i,j,kmax); }
 }
 
-bool SORSolver3D::solve( StaggeredGrid3D & grid )
+bool RedBlackSORSolver3D::solve( StaggeredGrid3D & grid )
 {
    Array<real> & p_ = grid.p();
    Array<real> & rhs_ = grid.rhs();
    real res = 0.0,resid = 1e100, dx_2 = pow(grid.dx(),-2), dy_2 = pow(grid.dy(),-2), dz_2 = pow(grid.dz(),-2);
    real numFluid_ = grid.getNumFluid();
-   unsigned int iterno = 0;
+   unsigned int i,j,k,iterno = 0;
    SetBoundary(p_);
-// SOR iteration
+// RedBlackSOR iteration
    do {
       iterno++;
-      for (unsigned int i=1; i<=imax;i++)
-          for (unsigned int j=1; j<=jmax;j++)
-              for (unsigned int k=1; k<=kmax;k++)
+      #pragma omp parallel for private(k)
+      for (i=1; i<=imax;i++)
+          for (j=1; j<=jmax;j++)
+              for (k=1+(i+j)%2;k<=kmax;k+=2)
+                  if (grid.isFluid(i,j,k))
+                     p_(i,j,k) = (1.0-omg)* p_(i,j,k)
+                                + omg * (  (grid.p(i,j,k,EAST) + grid.p(i,j,k,WEST)) *dx_2        
+                                          +(grid.p(i,j,k,NORTH) + grid.p(i,j,k,SOUTH)) *dy_2
+                                          +(grid.p(i,j,k,UP) + grid.p(i,j,k,DOWN)) *dz_2
+                                          - rhs_(i,j,k))
+                                      / (2.0*(dx_2 + dy_2 + dz_2));
+    
+      #pragma omp parallel for private(k)
+      for (i=1; i<=imax;i++)
+          for (j=1; j<=jmax;j++)
+              for (k=1+(i+j+1)%2;k<=kmax;k+=2)
                   if (grid.isFluid(i,j,k))
                      p_(i,j,k) = (1.0-omg)* p_(i,j,k)
                                 + omg * (  (grid.p(i,j,k,EAST) + grid.p(i,j,k,WEST)) *dx_2        
@@ -62,11 +75,13 @@ bool SORSolver3D::solve( StaggeredGrid3D & grid )
                                       / (2.0*(dx_2 + dy_2 + dz_2));
     
       SetBoundary(p_);
+
+      // Calculate residual
       if (iterno%checkfrequency == 0 ) {
          resid =0.0;
-         for (unsigned int i=1; i<=imax;i++)
-	       for (unsigned int j=1; j<=jmax;j++)
-	           for (unsigned int k=1; k<=kmax;k++)
+         for (i=1; i<=imax;i++)
+	       for (j=1; j<=jmax;j++)
+	           for (k=1; k<=kmax;k++)
 	               if (grid.isFluid(i,j,k)) {
 	                  res  =   (grid.p(i,j,k,EAST) + grid.p(i,j,k,WEST) - 2.0*grid.p(i,j,k,CENTER)) *dx_2
 	                         + (grid.p(i,j,k,NORTH) + grid.p(i,j,k,SOUTH) - 2.0*grid.p(i,j,k,CENTER)) *dy_2

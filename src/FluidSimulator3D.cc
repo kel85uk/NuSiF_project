@@ -4,7 +4,7 @@
 
 FluidSimulator3D::FluidSimulator3D( const FileReader & conf ) : 
 					  name(conf.getStringParameter("name")), grid_(StaggeredGrid3D(conf)),
-					  solver_(SORSolver3D(conf)), gamma(conf.getRealParameter("gamma")),
+					  gamma(conf.getRealParameter("gamma")),
 					  Re_1(1.0/conf.getRealParameter("Re")), tau(conf.getRealParameter("safetyfactor")),
 					  GX(conf.getRealParameter("GX")), GY(conf.getRealParameter("GY")), GZ(conf.getRealParameter("GZ")),
 					  noOfTimeSteps(conf.getIntParameter("timesteps")),timeStepNumber(0),time(0.0),
@@ -16,9 +16,23 @@ FluidSimulator3D::FluidSimulator3D( const FileReader & conf ) :
 					  boundary_condition_N("noslip"), boundary_condition_S("noslip"),
 					  boundary_condition_E("noslip"), boundary_condition_W("noslip"),
 					  boundary_condition_U("noslip"), boundary_condition_D("noslip"),
-					  boundary_velocity_N(0), boundary_velocity_S(0), boundary_velocity_E(0),
-					  boundary_velocity_W(0), boundary_velocity_U(0), boundary_velocity_D(0)
+					  boundary_velocity_N1(0), boundary_velocity_N2(0), boundary_velocity_N3(0),
+					  boundary_velocity_S1(0), boundary_velocity_S2(0), boundary_velocity_S3(0),
+					  boundary_velocity_E1(0), boundary_velocity_E2(0), boundary_velocity_E3(0),
+					  boundary_velocity_W1(0), boundary_velocity_W2(0), boundary_velocity_W3(0),
+					  boundary_velocity_U1(0), boundary_velocity_U2(0), boundary_velocity_U3(0),
+					  boundary_velocity_D1(0), boundary_velocity_D2(0), boundary_velocity_D3(0)
 {
+   if (conf.getStringParameter("solver") == "SOR")
+       solver_ = new SORSolver3D(conf);
+   else if (conf.getStringParameter("solver") == "RedBlackSOR")
+       solver_ = new RedBlackSORSolver3D(conf);
+   else if (conf.getStringParameter("solver") == "CG")
+       solver_ = new CGSolver3D(conf);
+/*   else if (conf.getStringParameter("solver") == "Multigrid")
+       solver_ = new MultigridSolver3D(conf);
+*/   else 
+       CHECK_MSG(0, "Invalid Solver. Valid solvers are/n1. SOR/n2. RedBlackSOR\n3. CG\n4. Multigrid");
    CHECK_MSG((Re_1 > 0), "Reynolds number (Re) must be greater than 0");
    CHECK_MSG((dt > 0), "dt must be greater than 0");
    CHECK_MSG((tau > 0 && tau <= 1), "safetyfactor must lie between 0 and 1");
@@ -34,71 +48,106 @@ FluidSimulator3D::FluidSimulator3D( const FileReader & conf ) :
    
    if (conf.find("boundary_condition_N")) {
       boundary_condition_N = conf.getStringParameter("boundary_condition_N");
-      CHECK_MSG ( boundary_condition_N != "outflow" || !(conf.find("boundary_velocity_N")),
-                  "outflow boundary condition cannot have velocity specified" );
-      CHECK_MSG ( boundary_condition_N != "inflow" || (conf.find("boundary_velocity_N")),
-                  "inflow boundary condition must have velocity specified" ); }
+
+      CHECK_MSG ((boundary_condition_N != "outflow")
+                  || !(conf.find("boundary_velocity_N1") || conf.find("boundary_velocity_N2") || conf.find("boundary_velocity_N3")),
+                 "outflow boundary condition cannot have velocity specified");  
+      CHECK_MSG ( boundary_condition_N != "inflow" || !(conf.find("boundary_velocity_N1") || conf.find("boundary_velocity_N3")),
+                  "inflow boundary condition must only have normal velocity specified" );
+      CHECK_MSG ( boundary_condition_N != "inflow" || (conf.find("boundary_velocity_N2")),
+                  "inflow boundary condition must have normal velocity specified" ); }
    else
       boundary_condition_N = "noslip"; 
-   if (conf.find("boundary_velocity_N"))
-      boundary_velocity_N = conf.getRealParameter("boundary_velocity_N");
+   if (conf.find("boundary_velocity_N1"))
+      boundary_velocity_N1 = conf.getRealParameter("boundary_velocity_N1");
+   if (conf.find("boundary_velocity_N3"))
+      boundary_velocity_N3 = conf.getRealParameter("boundary_velocity_N3");
 
    if (conf.find("boundary_condition_S")) {
       boundary_condition_S = conf.getStringParameter("boundary_condition_S");
-      CHECK_MSG ( boundary_condition_S != "outflow" || !(conf.find("boundary_velocity_S")),
-                  "outflow boundary condition cannot have velocity specified" );
-      CHECK_MSG ( boundary_condition_S != "inflow" || (conf.find("boundary_velocity_S")),
-                  "inflow boundary condition must have velocity specified" ); }
+      CHECK_MSG ((boundary_condition_S != "outflow")
+                  || !(conf.find("boundary_velocity_S1") || conf.find("boundary_velocity_S2") || conf.find("boundary_velocity_S3")),
+                 "outflow boundary condition cannot have velocity specified");  
+      CHECK_MSG ( boundary_condition_S != "inflow" || !(conf.find("boundary_velocity_S1") || conf.find("boundary_velocity_S3")),
+                  "inflow boundary condition must only have normal velocity specified" );
+      CHECK_MSG ( boundary_condition_S != "inflow" || (conf.find("boundary_velocity_S2")),
+                  "inflow boundary condition must have normal velocity specified" ); }
    else
       boundary_condition_S = "noslip"; 
-   if (conf.find("boundary_velocity_S"))
-      boundary_velocity_S = conf.getRealParameter("boundary_velocity_S");
+   if (conf.find("boundary_velocity_S1"))
+      boundary_velocity_S1 = conf.getRealParameter("boundary_velocity_S1");
+   if (conf.find("boundary_velocity_S3"))
+      boundary_velocity_S3 = conf.getRealParameter("boundary_velocity_S3");
 
    if (conf.find("boundary_condition_E")) {
       boundary_condition_E = conf.getStringParameter("boundary_condition_E");
-      CHECK_MSG ( boundary_condition_E != "outflow" || !(conf.find("boundary_velocity_E")),
-                  "outflow boundary condition cannot have velocity specified" );
-      CHECK_MSG ( boundary_condition_E != "inflow" || (conf.find("boundary_velocity_E")),
-                  "inflow boundary condition must have velocity specified" ); }
+      CHECK_MSG ((boundary_condition_E != "outflow")
+                  || !(conf.find("boundary_velocity_E1") || conf.find("boundary_velocity_E2") || conf.find("boundary_velocity_E3")),
+                 "outflow boundary condition cannot have velocity specified");  
+      CHECK_MSG ( boundary_condition_E != "inflow" || !(conf.find("boundary_velocity_E2") || conf.find("boundary_velocity_E3")),
+                  "inflow boundary condition must only have normal velocity specified" );
+      CHECK_MSG ( boundary_condition_E != "inflow" || (conf.find("boundary_velocity_E1")),
+                  "inflow boundary condition must have normal velocity specified" ); }
    else
       boundary_condition_E = "noslip"; 
-   if (conf.find("boundary_velocity_E"))
-      boundary_velocity_E = conf.getRealParameter("boundary_velocity_E");
+   if (conf.find("boundary_velocity_E2"))
+      boundary_velocity_E2 = conf.getRealParameter("boundary_velocity_E2");
+   if (conf.find("boundary_velocity_E3"))
+      boundary_velocity_E3 = conf.getRealParameter("boundary_velocity_E3");
       
    if (conf.find("boundary_condition_W")) {
       boundary_condition_W = conf.getStringParameter("boundary_condition_W");
-      CHECK_MSG ( boundary_condition_W != "outflow" || !(conf.find("boundary_velocity_W")),
-                  "outflow boundary condition cannot have velocity specified" );
-      CHECK_MSG ( boundary_condition_W != "inflow" || (conf.find("boundary_velocity_W")),
-                  "inflow boundary condition must have velocity specified" ); }
+      CHECK_MSG ((boundary_condition_W != "outflow")
+                  || !(conf.find("boundary_velocity_W1") || conf.find("boundary_velocity_W2") || conf.find("boundary_velocity_W3")),
+                 "outflow boundary condition cannot have velocity specified");  
+      CHECK_MSG ( boundary_condition_W != "inflow" || !(conf.find("boundary_velocity_W2") || conf.find("boundary_velocity_W3")),
+                  "inflow boundary condition must only have normal velocity specified" );
+      CHECK_MSG ( boundary_condition_W != "inflow" || (conf.find("boundary_velocity_W1")),
+                  "inflow boundary condition must have normal velocity specified" ); }
    else
       boundary_condition_W = "noslip"; 
-   if (conf.find("boundary_velocity_W"))
-      boundary_velocity_W = conf.getRealParameter("boundary_velocity_W");
+   if (conf.find("boundary_velocity_W2"))
+      boundary_velocity_W2 = conf.getRealParameter("boundary_velocity_W2");
+   if (conf.find("boundary_velocity_W3"))
+      boundary_velocity_W3 = conf.getRealParameter("boundary_velocity_W3");
    
    if (conf.find("boundary_condition_U")) {
       boundary_condition_U = conf.getStringParameter("boundary_condition_U");
-      CHECK_MSG ( boundary_condition_U != "outflow" || !(conf.find("boundary_velocity_U")),
-                  "outflow boundary condition cannot have velocity specified" );
-      CHECK_MSG ( boundary_condition_U != "inflow" || (conf.find("boundary_velocity_U")),
-                  "inflow boundary condition must have velocity specified" ); }
+      CHECK_MSG ((boundary_condition_U != "outflow")
+                  || !(conf.find("boundary_velocity_U1") || conf.find("boundary_velocity_U2") || conf.find("boundary_velocity_U3")),
+                 "outflow boundary condition cannot have velocity specified");  
+      CHECK_MSG ( boundary_condition_U != "inflow" || !(conf.find("boundary_velocity_U1") || conf.find("boundary_velocity_U2")),
+                  "inflow boundary condition must only have normal velocity specified" );
+      CHECK_MSG ( boundary_condition_U != "inflow" || (conf.find("boundary_velocity_U3")),
+                  "inflow boundary condition must have normal velocity specified" ); }
    else
       boundary_condition_U = "noslip"; 
-   if (conf.find("boundary_velocity_U"))
-      boundary_velocity_U = conf.getRealParameter("boundary_velocity_U");
+   if (conf.find("boundary_velocity_U1"))
+      boundary_velocity_U1 = conf.getRealParameter("boundary_velocity_U1");
+   if (conf.find("boundary_velocity_U2"))
+      boundary_velocity_U2 = conf.getRealParameter("boundary_velocity_U2");
    
    if (conf.find("boundary_condition_D")) {
       boundary_condition_D = conf.getStringParameter("boundary_condition_D");
-      CHECK_MSG ( boundary_condition_D != "outflow" || !(conf.find("boundary_velocity_D")),
-                  "outflow boundary condition cannot have velocity specified" );
-      CHECK_MSG ( boundary_condition_D != "inflow" || (conf.find("boundary_velocity_D")),
-                  "inflow boundary condition must have velocity specified" );
-      }
+      CHECK_MSG ((boundary_condition_D != "outflow")
+                  || !(conf.find("boundary_velocity_D1") || conf.find("boundary_velocity_D2") || conf.find("boundary_velocity_D3")),
+                 "outflow boundary condition cannot have velocity specified");  
+      CHECK_MSG ( boundary_condition_D != "inflow" || !(conf.find("boundary_velocity_D1") || conf.find("boundary_velocity_D2")),
+                  "inflow boundary condition must only have normal velocity specified" );
+      CHECK_MSG ( boundary_condition_D != "inflow" || (conf.find("boundary_velocity_D3")),
+                  "inflow boundary condition must have normal velocity specified" ); }
    else
       boundary_condition_D = "noslip"; 
-   if (conf.find("boundary_velocity_D"))
-      boundary_velocity_D = conf.getRealParameter("boundary_velocity_D");
+   if (conf.find("boundary_velocity_D1"))
+      boundary_velocity_D1 = conf.getRealParameter("boundary_velocity_D1");
+   if (conf.find("boundary_velocity_D2"))
+      boundary_velocity_D2 = conf.getRealParameter("boundary_velocity_D2");
    
+}
+
+FluidSimulator3D::~FluidSimulator3D()
+{
+   delete [] solver_;
 }
 
 inline real FluidSimulator3D::dU2_dx(int i, int j, int k)
@@ -214,14 +263,14 @@ void FluidSimulator3D::refreshBoundaries()
    if (boundary_condition_N == "noslip")
        for (int i=1; i<=imax; i++)
            for (int k=1; k<=kmax; k++) {
-               u(i,jmax+1,k) = 2.0 * boundary_velocity_N - u(i,jmax,k);
+               u(i,jmax+1,k) = 2.0 * boundary_velocity_N1 - u(i,jmax,k);
                v(i,jmax,k) = 0.0;
-               w(i,jmax+1,k) = - w(i,jmax,k); }
+               w(i,jmax+1,k) =  2.0 * boundary_velocity_N3 - w(i,jmax,k); }
    else if (boundary_condition_N == "inflow")
        for (int i=1; i<=imax; i++)
            for (int k=1; k<=kmax; k++) {
                u(i,jmax+1,k) = -u(i,jmax,k);
-               v(i,jmax,k) = - boundary_velocity_N;
+               v(i,jmax,k) = - boundary_velocity_N2;
                w(i,jmax+1,k) = -w(i,jmax,k); }
    else if (boundary_condition_N == "outflow")
        for (int i=1; i<=imax; i++)
@@ -233,14 +282,14 @@ void FluidSimulator3D::refreshBoundaries()
    if (boundary_condition_S == "noslip")
        for (int i=1; i<=imax; i++)
            for (int k=1; k<=kmax; k++) {
-               u(i,0,k) = 2.0 * boundary_velocity_S -u(i,1,k);
+               u(i,0,k) = 2.0 * boundary_velocity_S1 -u(i,1,k);
                v(i,0,k) = 0.0;
-               w(i,0,k) = 2.0 * boundary_velocity_S -w(i,1,k); }
+               w(i,0,k) = 2.0 * boundary_velocity_S3 -w(i,1,k); }
    else if (boundary_condition_S == "inflow")
        for (int i=1; i<=imax; i++)
            for (int k=1; k<=kmax; k++) {
                u(i,0,k) = -u(i,1,k);
-               v(i,0,k) = boundary_velocity_S;
+               v(i,0,k) = boundary_velocity_S2;
                w(i,0,k) = -w(i,1,k); }
    else if (boundary_condition_S == "outflow")
        for (int i=1; i<=imax; i++)
@@ -253,12 +302,12 @@ void FluidSimulator3D::refreshBoundaries()
        for (int j=1; j<=jmax; j++)
            for (int k=1; k<=kmax; k++) {
                u(imax,j,k) = 0.0;
-               v(imax+1,j,k) = 2.0 * boundary_velocity_E -v(imax,j,k);
-               w(imax+1,j,k) = 2.0 * boundary_velocity_E -w(imax,j,k); }
+               v(imax+1,j,k) = 2.0 * boundary_velocity_E2 -v(imax,j,k);
+               w(imax+1,j,k) = 2.0 * boundary_velocity_E3 -w(imax,j,k); }
    else if (boundary_condition_E == "inflow")
        for (int j=1; j<=jmax; j++)
            for (int k=1; k<=kmax; k++) {
-               u(imax,j,k) = -boundary_velocity_E;
+               u(imax,j,k) = -boundary_velocity_E1;
                v(imax+1,j,k) = -v(imax,j,k);
                w(imax+1,j,k) = -w(imax,j,k); }
    else if (boundary_condition_E == "outflow")
@@ -272,12 +321,12 @@ void FluidSimulator3D::refreshBoundaries()
        for (int j=1; j<=jmax; j++)
            for (int k=1; k<=kmax; k++) {
                u(0,j,k) = 0.0;
-               v(0,j,k) = 2.0 * boundary_velocity_W -v(1,j,k);
-               w(0,j,k) = 2.0 * boundary_velocity_W -w(1,j,k); }
+               v(0,j,k) = 2.0 * boundary_velocity_W2 -v(1,j,k);
+               w(0,j,k) = 2.0 * boundary_velocity_W3 -w(1,j,k); }
    else if (boundary_condition_W == "inflow")
        for (int j=1; j<=jmax; j++)
            for (int k=1; k<=kmax; k++) {
-               u(0,j,k) = boundary_velocity_W;
+               u(0,j,k) = boundary_velocity_W1;
                v(0,j,k) = -v(1,j,k);
                w(0,j,k) = -w(1,j,k); }
    else if (boundary_condition_W == "outflow")
@@ -290,15 +339,15 @@ void FluidSimulator3D::refreshBoundaries()
    if (boundary_condition_U == "noslip")
        for (int i=1; i<=imax; i++)
            for (int j=1; j<=jmax; j++) {
-               u(i,j,kmax+1) = 2.0 * boundary_velocity_U -u(i,j,kmax);
-               v(i,j,kmax+1) = 2.0 * boundary_velocity_U -v(i,j,kmax);
+               u(i,j,kmax+1) = 2.0 * boundary_velocity_U1 -u(i,j,kmax);
+               v(i,j,kmax+1) = 2.0 * boundary_velocity_U2 -v(i,j,kmax);
                w(i,j,kmax) = 0.0; }
    else if (boundary_condition_U == "inflow")
        for (int i=1; i<=imax; i++)
            for (int j=1; j<=jmax; j++) {
                u(i,j,kmax+1) = -u(i,j,kmax);
                v(i,j,kmax+1) = -v(i,j,kmax);
-               w(i,j,kmax) = -boundary_velocity_U; }
+               w(i,j,kmax) = -boundary_velocity_U3; }
    else if (boundary_condition_U == "outflow")
        for (int i=1; i<=imax; i++)
            for (int j=1; j<=jmax; j++) {
@@ -309,15 +358,15 @@ void FluidSimulator3D::refreshBoundaries()
    if (boundary_condition_D == "noslip")
        for (int i=1; i<=imax; i++)
            for (int j=1; j<=jmax; j++) {
-               u(i,j,0) = 2.0 * boundary_velocity_D -u(i,j,1);
-               v(i,j,0) = 2.0 * boundary_velocity_D -v(i,j,1);
+               u(i,j,0) = 2.0 * boundary_velocity_D1 -u(i,j,1);
+               v(i,j,0) = 2.0 * boundary_velocity_D2 -v(i,j,1);
                w(i,j,0) = 0.0; }
    else if (boundary_condition_D == "inflow")
        for (int i=1; i<=imax; i++)
            for (int j=1; j<=jmax; j++) {
                u(i,j,0) = -u(i,j,1);
                v(i,j,0) = -v(i,j,1);
-               w(i,j,0) = boundary_velocity_D; }
+               w(i,j,0) = boundary_velocity_D3; }
    else if (boundary_condition_D == "outflow")
        for (int i=1; i<=imax; i++)
            for (int j=1; j<=jmax; j++) {
@@ -382,7 +431,9 @@ void FluidSimulator3D::composeRHS()
        for (int j=1; j<=jmax; j++)
            for (int k=1; k<=kmax; k++)
                if (grid_.isFluid(i,j,k))
-                  rhs(i,j,k) = (1.0/dt) * ( (f(i,j,k) - f(i,j,k))/dx + (g(i,j,k) - g(i,j,k))/dy + (h(i,j,k) - h(i,j,k))/dz );
+                  rhs(i,j,k) = (1.0/dt) * ( (grid_.f(i,j,k,CENTER) - grid_.f(i,j,k,WEST))/dx
+                                          + (grid_.g(i,j,k,CENTER) - grid_.g(i,j,k,SOUTH))/dy 
+                                          + (grid_.h(i,j,k,CENTER) - grid_.h(i,j,k,DOWN))/dz );
 }
 
 void FluidSimulator3D::updateVelocities()
@@ -420,7 +471,7 @@ void FluidSimulator3D::simulateTimeStepCount()
       computeFGH();
       composeRHS();
       std::cout<< "\nTime step    = "<<timeStepNumber << "\tTime     = "<< time<<"\n";
-      solver_.solve(grid_);   
+      solver_->solve(grid_);   
       updateVelocities();
       timeStepNumber++;
       time += dt;
@@ -441,7 +492,8 @@ void FluidSimulator3D::simulate( real duration )
          normalizePressure();
       computeFGH();
       composeRHS();
-      solver_.solve(grid_);   
+      std::cout<< "\nTime step    = "<<timeStepNumber << "\tTime     = "<< time<<"\n";
+      solver_->solve(grid_);   
       updateVelocities();
       timeStepNumber++;
       time += dt;
