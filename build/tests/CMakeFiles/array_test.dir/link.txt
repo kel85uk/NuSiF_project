@@ -1,0 +1,1 @@
+/opt/intel/bin/icpc   -std=c++0x -Wall -fopenmp -Wconversion -Wshadow -g    CMakeFiles/array_test.dir/__/src/Debug.cc.o CMakeFiles/array_test.dir/ArrayTest.cc.o  -o array_test -rdynamic 

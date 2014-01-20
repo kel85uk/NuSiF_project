@@ -1,0 +1,1 @@
+/opt/intel/bin/icpc   -std=c++0x -Wall -fopenmp -Wconversion -Wshadow -g    CMakeFiles/SOR_test3D.dir/__/src/FileReader.cc.o CMakeFiles/SOR_test3D.dir/__/src/Debug.cc.o CMakeFiles/SOR_test3D.dir/__/src/StaggeredGrid3D.cc.o CMakeFiles/SOR_test3D.dir/__/src/SORSolver3D.cc.o CMakeFiles/SOR_test3D.dir/SORTest3D.cc.o  -o SOR_test3D -rdynamic 

@@ -1,0 +1,1 @@
+/opt/intel/bin/icpc   -std=c++0x -Wall -fopenmp -Wconversion -Wshadow -g    CMakeFiles/filereader_test.dir/__/src/FileReader.cc.o CMakeFiles/filereader_test.dir/__/src/Debug.cc.o CMakeFiles/filereader_test.dir/FileReaderTest.cc.o  -o filereader_test -rdynamic 

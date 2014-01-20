@@ -1,0 +1,14 @@
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/CG_test.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/CG_test3D.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/Derivative_test.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/Derivative_test3D.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/Multigrid_test.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/PCG_test.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/RedBlackSOR_test.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/RedBlackSOR_test3D.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/SOR_test.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/SOR_test3D.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/array_test.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/tests/CMakeFiles/filereader_test.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/src/CMakeFiles/nusif.dir
+/home/kklloh/Documents/FAU/NuSiF/NuSiF_proj/simulator/build/src/CMakeFiles/nusif3D.dir

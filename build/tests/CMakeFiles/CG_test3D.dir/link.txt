@@ -1,0 +1,1 @@
+/opt/intel/bin/icpc   -std=c++0x -Wall -fopenmp -Wconversion -Wshadow -g    CMakeFiles/CG_test3D.dir/__/src/FileReader.cc.o CMakeFiles/CG_test3D.dir/__/src/Debug.cc.o CMakeFiles/CG_test3D.dir/__/src/StaggeredGrid3D.cc.o CMakeFiles/CG_test3D.dir/__/src/CGSolver3D.cc.o CMakeFiles/CG_test3D.dir/CGTest3D.cc.o  -o CG_test3D -rdynamic 
