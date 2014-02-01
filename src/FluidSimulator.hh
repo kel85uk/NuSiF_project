@@ -30,7 +30,7 @@ class FluidSimulator
       int noOfTimeSteps, timeStepNumber, normFrequency;
       real time, dt;
       const real dtmax;
-      real dx, dy, dx_2, dy_2;
+      real dx, dy, dx_2, dy_2, inv4dx, inv4dy;
       int outputInterval, imax, jmax;
       
       std::string boundary_condition_N, boundary_condition_S, boundary_condition_E, boundary_condition_W;

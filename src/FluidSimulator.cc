@@ -10,6 +10,7 @@ FluidSimulator::FluidSimulator( const FileReader & conf ) :
 					  noOfTimeSteps(conf.getIntParameter("timesteps")),timeStepNumber(0),time(0.0),
 					  dt(conf.getRealParameter("dt")), dtmax(conf.getRealParameter("dtmax")),
 					  dx(grid_.dx()), dy(grid_.dy()), dx_2(1.0/(dx*dx)), dy_2(1.0/(dy*dy)),
+					  inv4dx(0.25/dx), inv4dy(0.25/dy),
 					  imax(conf.getIntParameter("imax")), jmax(conf.getIntParameter("jmax")),
 					  boundary_condition_N("noslip"), boundary_condition_S("noslip"),
 					  boundary_condition_E("noslip"), boundary_condition_W("noslip"),
@@ -94,7 +95,7 @@ FluidSimulator::~FluidSimulator()
 
 inline real FluidSimulator::dU2_dx(int i, int j)
 {
-   return (0.25/dx * (  pow(grid_.u(i,j,CENTER)+grid_.u(i,j,EAST),2) - pow(grid_.u(i,j,WEST)+grid_.u(i,j,CENTER),2) 
+   return (inv4dx * (  pow(grid_.u(i,j,CENTER)+grid_.u(i,j,EAST),2) - pow(grid_.u(i,j,WEST)+grid_.u(i,j,CENTER),2) 
                              + gamma * (  std::abs(grid_.u(i,j,CENTER)+grid_.u(i,j,EAST))
                                           * (grid_.u(i,j,CENTER)-grid_.u(i,j,EAST))
                                         - std::abs(grid_.u(i,j,WEST)+grid_.u(i,j,CENTER))
@@ -102,7 +103,7 @@ inline real FluidSimulator::dU2_dx(int i, int j)
 }
 inline real FluidSimulator::dV2_dy(int i, int j)
 {
-   return (0.25/dy * (  pow(grid_.v(i,j,CENTER)+grid_.v(i,j,NORTH),2) - pow(grid_.v(i,j,SOUTH)+grid_.v(i,j,CENTER),2) 
+   return (inv4dy * (  pow(grid_.v(i,j,CENTER)+grid_.v(i,j,NORTH),2) - pow(grid_.v(i,j,SOUTH)+grid_.v(i,j,CENTER),2) 
                              + gamma * (  std::abs(grid_.v(i,j,CENTER)+grid_.v(i,j,NORTH))
                                           * (grid_.v(i,j,CENTER)-grid_.v(i,j,NORTH)) 
                                         - std::abs(grid_.v(i,j,SOUTH)+grid_.v(i,j,CENTER))
@@ -110,14 +111,14 @@ inline real FluidSimulator::dV2_dy(int i, int j)
 }
 inline real FluidSimulator::dUV_dy(int i, int j)
 {
-   return (0.25/dy * (  (grid_.v(i,j,CENTER)+grid_.v(i,j,EAST))*(grid_.u(i,j,CENTER)+grid_.u(i,j,NORTH))
+   return (inv4dy * (  (grid_.v(i,j,CENTER)+grid_.v(i,j,EAST))*(grid_.u(i,j,CENTER)+grid_.u(i,j,NORTH))
                       - (grid_.v(i,j,SOUTH)+grid_.v(i+1,j,SOUTH))*(grid_.u(i,j,SOUTH)+grid_.u(i,j,CENTER))
                       + gamma * (  std::abs(grid_.v(i,j,CENTER)+grid_.v(i,j,EAST)) * (grid_.u(i,j,CENTER)-grid_.u(i,j,NORTH))  
                                  - std::abs(grid_.v(i,j,SOUTH)+grid_.v(i+1,j,SOUTH)) * (grid_.u(i,j,SOUTH)-grid_.u(i,j,CENTER)) ) ) );
 }
 inline real FluidSimulator::dVU_dx(int i, int j)
 {
-   return (0.25/dx * (  (grid_.u(i,j,CENTER)+grid_.u(i,j,NORTH))*(grid_.v(i,j,CENTER)+grid_.v(i,j,EAST))
+   return (inv4dx * (  (grid_.u(i,j,CENTER)+grid_.u(i,j,NORTH))*(grid_.v(i,j,CENTER)+grid_.v(i,j,EAST))
                       - (grid_.u(i,j,WEST)+grid_.u(i,j+1,WEST))*(grid_.v(i,j,WEST)+grid_.v(i,j,CENTER)) 
                       + gamma * (  std::abs(grid_.u(i,j,CENTER)+grid_.u(i,j,NORTH)) * (grid_.v(i,j,CENTER)-grid_.v(i,j,EAST)) 
                                  - std::abs(grid_.u(i,j,WEST)+grid_.u(i,j+1,WEST)) * (grid_.v(i,j,WEST)-grid_.v(i,j,CENTER)) ) ) );
@@ -141,7 +142,7 @@ inline real FluidSimulator::d2V_dy2(int i, int j)
 
 void FluidSimulator::determineNextDT( real const & limit)
 {
-   real stepSize = tau*std::min( (0.5/Re_1) / (1.0/(dx*dx)+1.0/(dy*dy)),
+   real stepSize = tau*std::min( (0.5/Re_1) / (dx_2+dy_2),
                                   std::min( dx/std::abs(u.maximum()), dy/std::abs(v.maximum()) ) );
    dt = stepSize<limit ? stepSize : limit;
 }
@@ -289,6 +290,7 @@ void FluidSimulator::simulate( real duration )
          normalizePressure();
       computeFG();
       composeRHS();
+      std::cout<< "\nTime step    = "<<timeStepNumber << "\tTime     = "<< time<<"\n";
       solver_->solve(grid_);   
       updateVelocities();
       timeStepNumber++;

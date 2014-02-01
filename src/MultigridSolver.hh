@@ -18,14 +18,26 @@ public:
    bool solve( StaggeredGrid & grid );
 
 private:
-   unsigned int imax,jmax, itermax, checkfrequency;
+   unsigned int imax, jmax, itermax, checkfrequency, levels, itercoarse, iterpre, iterpost;
    real omg, eps;
    
    // copy inner points to boundary
-   inline void SetBoundary (Array<real> & p);
+   void SetBoundary (Array<real> & p);
 
    // Evaluate residual
-   inline real Residual (StaggeredGrid & grid);   
+   real Residual ( Array<real> & sol, Array<real> & rhs, real dx, real dy );
+   
+   void VCycle(unsigned int lev, Array<real> ** sol, Array<real> ** rhs, real dx, real dy);
+   
+   void Restrict( Array<real>& fine, Array<real>& coarse );
+   void SORsweep( Array<real> & sol, Array<real> & rhs, real dx, real dy );
+   void RestrictResisdual(Array<real>& sol, Array<real>& rhs, Array<real>& rhs_coarse, real dx, real dy);
+   void interpolateCorrect(Array<real>& sol_fine, Array<real>& sol_coarse);
+   void interpolate(Array<real>& sol_fine, Array<real>& sol_coarse);
+   
+   
+   real rhsSum( Array<real> & rhs );
+
 };
 #endif //Multigrid_SOLVER_HH
 

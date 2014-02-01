@@ -8,8 +8,6 @@
 class PCGSolver: public Solver
 {
 public:
-   // Constructor to manually create CGSolver
-   PCGSolver ( unsigned int imax_, unsigned int jmax_, real omg_, real eps_, unsigned int itermax_);
 
    // Constructor to create a CGSolver from a parsed configuration file
    PCGSolver ( const FileReader & configuration );

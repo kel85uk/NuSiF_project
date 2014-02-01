@@ -37,11 +37,6 @@ public:
    // Destructor
    ~Array();
 
-   // Depending on your implementation you might need the following:
-   // Array(const Array& s);
-   // Array& operator= (const Array& s);
-
-
    // Access Operators for 1D, 2D and 3D
    inline T & operator () ( int i );
    inline T & operator () ( int i ,int j );
@@ -178,54 +173,67 @@ inline const T& Array<T>::operator ()(int i, int j, int k) const
 }
 
 template <typename T>
-Array<T>& Array<T>::operator+= (const Array &rhs){
+Array<T>& Array<T>::operator+= (const Array &rhs)
+{
 	ASSERT_MSG(Xsize*Ysize*Zsize == rhs.getSize(), "Array are of different sizes");
-	noOfDim = rhs.noOfDim;
-	Xsize = rhs.Xsize;
-	Ysize = rhs.Ysize;
-	Zsize = rhs.Zsize;
-	std::vector<T> result = Data;
-	for (auto i = result.begin(); i!=result.end();++i){
-		Data[i-result.begin()] = *i + rhs.Data[i-result.begin()];
+	for (auto it = Data.begin(); it!=Data.end();++it){
+		*it += rhs.Data[it-Data.begin()];
 	}
 	return *this;
 }
 
 template <typename T>
-Array<T>& Array<T>::operator-= (const Array &rhs){
+Array<T>& Array<T>::operator-= (const Array &rhs)
+{
 	ASSERT_MSG(Xsize*Ysize*Zsize == rhs.getSize(), "Array are of different sizes");
-	noOfDim = rhs.noOfDim;
-	Xsize = rhs.Xsize;
-	Ysize = rhs.Ysize;
-	Zsize = rhs.Zsize;
-	std::vector<T> result = Data;
-	for (auto i = result.begin(); i!=result.end();++i){
-		Data[i-result.begin()] = *i - rhs.Data[i-result.begin()];
+	for (auto it = Data.begin(); it!=Data.end();++it){
+		*it -= rhs.Data[it-Data.begin()];
 	}
 	return *this;
 }
 
 template <typename T>
-const Array<T> Array<T>::operator+ (const Array<T> &other) const{
-	return Array<T>(*this) += other;
-}
-template <typename T>
-const Array<T> Array<T>::operator- (const Array<T> &other) const{
-	return Array<T>(*this) -= other;
+Array<T>& Array<T>::operator*= (const Array &rhs)
+{
+	ASSERT_MSG(Xsize*Ysize*Zsize == rhs.getSize(), "Array are of different sizes");
+	for (auto it = Data.begin(); it!=Data.end();++it){
+		*it *= rhs.Data[it-Data.begin()];
+	}
+	return *this;
 }
 
 template <typename T>
-Array<T> Array<T>::operator- () const{
+const Array<T> Array<T>::operator+ (const Array<T> &other) const
+{
 	Array<T> result(*this);
-	result.fill(0);
-	result -= Array<T>(*this);
+	return result += other;
+}
+template <typename T>
+const Array<T> Array<T>::operator- (const Array<T> &other) const
+{
+	Array<T> result(*this);
+	return result -= other;
+}
+
+template <typename T>
+const Array<T> Array<T>::operator* (const Array<T> &other) const
+{
+	Array<T> result(*this);
+	return result *= other;
+}
+
+template <typename T>
+Array<T> Array<T>::operator- () const
+{
+	Array<T> result((*this)*(-1));
 	return result;
 }
 template <typename T>
-Array<T> Array<T>::operator* (const real value) const{
+Array<T> Array<T>::operator* (const real value) const
+{
 	Array<T> result(*this);
 	for (auto i=result.Data.begin(); i!=result.Data.end();++i)
-		result.Data[i-result.Data.begin()] = value*result.Data[i-result.Data.begin()];
+		result.Data[i-result.Data.begin()] *= value;
 	return result;
 }
 
@@ -278,13 +286,12 @@ void Array<T>::fill( T value )
 
 // Dot product (no dimensions check)
 template <typename T>
-T Array<T>::dotNC( Array<T>& vec2){
-	T result;
-	ASSERT_MSG(Data.size() == vec2.getSize(), "Array of two different lengths!");
-	auto index = Data.begin() - Data.begin();
-	for (auto i = Data.begin(); i!= Data.end(); ++i){
-		index = i - Data.begin();
-		result += (*i)*vec2(index);
+T Array<T>::dotNC( Array<T>& vec2)
+{
+	T result = 0;
+	ASSERT_MSG(getSize() == vec2.getSize(), "Array of two different lengths!");
+	for (auto it = Data.begin(); it!= Data.end(); ++it){
+		result += (*it)*vec2(it - Data.begin());
 	}
 	return result;
 }

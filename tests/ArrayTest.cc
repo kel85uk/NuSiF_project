@@ -16,6 +16,8 @@ void copyTest()
    // Fill second single array
    Array<real> arr2 (size);
    arr2 = arr;
+   arr2 -= arr;
+   arr2 += arr;
    arr2 += arr;
 
    // check if values where set correctly
@@ -23,7 +25,9 @@ void copyTest()
      CHECK( arr2(i) == 2*i ); 
 
    Array<real> arr3 = arr2;
-   Array<real> temp = arr3 + arr2;
+   Array<real> temp = arr3 * arr2;
+   temp = arr3 - arr2;
+   temp = arr3 + arr2;
    for (int i = 0; i<size; ++i)
    	CHECK( temp(i) == 4*i);
    temp -= arr;

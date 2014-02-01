@@ -68,6 +68,7 @@ protected:
    Array<real> rhs_; //< right hand side of the pressure equation
    Array<unsigned char> isfluid_;
 
+   int numFluid_;
    real xlength,ylength;
    real dx_;   //< distance between two grid points in x direction
    real dy_;   //< distance between two grid points in y direction
@@ -87,10 +88,6 @@ protected:
 // Function to compute the number of fluid cells 
 inline int StaggeredGrid::getNumFluid()
 {
-   int numFluid_ = 0;
-   for (int i=1; i<isfluid_.getSize(0)-1; i++) 
-       for (int j=1; j<isfluid_.getSize(1)-1; j++)
-           numFluid_+=isfluid_(i,j);
    return numFluid_;
 }
 

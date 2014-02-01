@@ -25,10 +25,10 @@ RedBlackSORSolver::RedBlackSORSolver ( const FileReader & configuration ):
 
 inline void RedBlackSORSolver::SetBoundary ( Array<real> & p )
 {
-   for (unsigned int i=0; i<=imax;i++) {
+   for (unsigned int i=1; i<=imax;i++) {
         p(i,0) = p(i,1);
         p(i,jmax + 1) = p(i,jmax); }
-   for (unsigned int j=0; j<=jmax;j++) {
+   for (unsigned int j=1; j<=jmax;j++) {
         p(0,j) = p(1,j);
         p(imax + 1,j) = p(imax,j); }
 }
@@ -38,32 +38,34 @@ bool RedBlackSORSolver::solve( StaggeredGrid & grid )
    Array<real> & p_ = grid.p();
    Array<real> & rhs_ = grid.rhs();
    real res =0.0, resid = 1e100, dx_2 = pow(grid.dx(),-2), dy_2 = pow(grid.dy(),-2);
-   real numFluid = grid.getNumFluid();
+   real facD = omg / (2.0*(dx_2 + dy_2));   
    unsigned int iterno = 0;
    unsigned int i,j;
    SetBoundary(p_);
 // RedBlackSOR iteration
    do {
       iterno++;
-      #pragma omp parallel for private(i)
-      for (j=1; j<=jmax;j++)
-          for (i=1+(j+1)%2;i<=imax;i+=2)
-              if (grid.isFluid(i,j))
-                 p_(i,j) = (1.0-omg)* p_(i,j)
-                        + omg * (  (grid.p(i,j,EAST)+grid.p(i,j,WEST)) *dx_2
-                                  +(grid.p(i,j,NORTH)+grid.p(i,j,SOUTH)) *dy_2
-                                  - rhs_(i,j))
-                              / (2.0*(dx_2 + dy_2));
-	  #pragma omp parallel for private(i)
-      for (j=1; j<=jmax;j++)
-          for (i=1+(j)%2;i<=imax;i+=2)
-              if (grid.isFluid(i,j))
-                 p_(i,j) = (1.0-omg)* p_(i,j)
-                        + omg * (  (grid.p(i,j,EAST)+grid.p(i,j,WEST)) *dx_2
-                                  +(grid.p(i,j,NORTH)+grid.p(i,j,SOUTH)) *dy_2
-                                  - rhs_(i,j))
-                              / (2.0*(dx_2 + dy_2));
-    
+
+      #pragma omp parallel shared(grid,p_,rhs_,i,dx_2,dy_2) private(j)
+      {
+           #pragma omp for schedule(static) nowait
+ 	     for (i=1; i<=imax;i++)
+               for (j=1+(i+1)%2;j<=jmax;j+=2)
+                  if (grid.isFluid(i,j))
+                     p_(i,j) = (1.0-omg)* p_(i,j)
+                             + facD * (  (grid.p(i,j,EAST)+grid.p(i,j,WEST)) *dx_2
+                                        +(grid.p(i,j,NORTH)+grid.p(i,j,SOUTH)) *dy_2
+                                        - rhs_(i,j));
+                                  
+           #pragma omp for schedule(static) nowait
+	     for (i=1; i<=imax;i++)
+               for (j=1+(i)%2;j<=jmax;j+=2)
+                  if (grid.isFluid(i,j))
+                     p_(i,j) = (1.0-omg)* p_(i,j)
+                             + facD * (  (grid.p(i,j,EAST)+grid.p(i,j,WEST)) *dx_2
+                                        +(grid.p(i,j,NORTH)+grid.p(i,j,SOUTH)) *dy_2
+                                        - rhs_(i,j));
+      }
       SetBoundary(p_);
       
       // Calculate residual
@@ -76,7 +78,7 @@ bool RedBlackSORSolver::solve( StaggeredGrid & grid )
                              + (grid.p(i,j,NORTH) + grid.p(i,j,SOUTH) - 2.0*p_(i,j)) *dy_2
                              - rhs_(i,j) ;       
                       resid += res*res;  }
-         resid = sqrt(resid/numFluid);
+         resid = sqrt(resid/grid.getNumFluid());
          std::cout<<"Iteration no = "<<iterno<< "\tResidual = "<< resid<<"\n"; } }
   while (resid>=eps && iterno<itermax);   
 

@@ -11,6 +11,7 @@ FluidSimulator3D::FluidSimulator3D( const FileReader & conf ) :
 					  dt(conf.getRealParameter("dt")), dtmax(conf.getRealParameter("dtmax")),
 					  dx(grid_.dx()), dy(grid_.dy()), dz(grid_.dz()),
 					  dx_2(1.0/(dx*dx)), dy_2(1.0/(dy*dy)), dz_2(1.0/(dz*dz)),
+					  inv4dx(0.25/dx), inv4dy(0.25/dy), inv4dz(0.25/dz),
 					  imax(conf.getIntParameter("imax")), jmax(conf.getIntParameter("jmax")),
 					  kmax(conf.getIntParameter("kmax")),
 					  boundary_condition_N("noslip"), boundary_condition_S("noslip"),
@@ -152,63 +153,63 @@ FluidSimulator3D::~FluidSimulator3D()
 
 inline real FluidSimulator3D::dU2_dx(int i, int j, int k)
 {
-return (0.25/dx*(pow(grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,EAST),2) - pow(grid_.u(i,j,k,WEST)+grid_.u(i,j,k,CENTER),2) 
+return (inv4dx*(pow(grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,EAST),2) - pow(grid_.u(i,j,k,WEST)+grid_.u(i,j,k,CENTER),2) 
                     +gamma*( std::abs(grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,EAST)) * (grid_.u(i,j,k,CENTER)-grid_.u(i,j,k,EAST)) 
                             -std::abs(grid_.u(i,j,k,WEST)+grid_.u(i,j,k,CENTER)) * (grid_.u(i,j,k,WEST)-grid_.u(i,j,k,CENTER)))));
 }
 
 inline real FluidSimulator3D::dV2_dy(int i, int j, int k)
 {
-return (0.25/dy*(pow(grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,NORTH),2) - pow(grid_.v(i,j,k,SOUTH)+grid_.v(i,j,k,CENTER),2) 
+return (inv4dy*(pow(grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,NORTH),2) - pow(grid_.v(i,j,k,SOUTH)+grid_.v(i,j,k,CENTER),2) 
                     +gamma*( std::abs(grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,NORTH)) * (grid_.v(i,j,k,CENTER)-grid_.v(i,j,k,NORTH)) 
                             -std::abs(grid_.v(i,j,k,SOUTH)+grid_.v(i,j,k,CENTER)) * (grid_.v(i,j,k,SOUTH)-grid_.v(i,j,k,CENTER)))));
 }
 
 inline real FluidSimulator3D::dW2_dz(int i, int j, int k)
 {
-return (0.25/dy*(pow(grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,UP),2) - pow(grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,DOWN),2) 
+return (inv4dy*(pow(grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,UP),2) - pow(grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,DOWN),2) 
                      + gamma*( std::abs(grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,UP)) * (grid_.w(i,j,k,CENTER)-grid_.w(i,j,k,UP)) 
                               -std::abs(grid_.w(i,j,k,DOWN)+grid_.w(i,j,k,CENTER)) * (grid_.w(i,j,k,CENTER)-grid_.w(i,j,k,DOWN)))));
 }
 
 inline real FluidSimulator3D::dUV_dy(int i, int j, int k)
 {
-return (0.25/dy* ( (grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,EAST))*(grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,NORTH))
+return (inv4dy* ( (grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,EAST))*(grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,NORTH))
                   -(grid_.v(i,j,k,SOUTH)+grid_.v(i+1,j,k,SOUTH))*(grid_.u(i,j,k,SOUTH)+grid_.u(i,j,k,CENTER))
                   +gamma * (  std::abs(grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,EAST)) * (grid_.u(i,j,k,CENTER)-grid_.u(i,j,k,NORTH))  
                             - std::abs(grid_.v(i,j,k,SOUTH)+grid_.v(i+1,j,k,SOUTH)) * (grid_.u(i,j,k,SOUTH)-grid_.u(i,j,k,CENTER)))));
 }
 inline real FluidSimulator3D::dUW_dz(int i, int j, int k)
 {
-return (0.25/dz* ( (grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,EAST))*(grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,UP))
+return (inv4dz* ( (grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,EAST))*(grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,UP))
                   -(grid_.w(i,j,k,DOWN)+grid_.w(i+1,j,k,DOWN))*(grid_.u(i,j,k,DOWN)+grid_.u(i,j,k,CENTER))
                   +gamma * (  std::abs(grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,EAST)) * (grid_.u(i,j,k,CENTER)-grid_.u(i,j,k,UP))  
                             - std::abs(grid_.w(i,j,k,DOWN)+grid_.w(i+1,j,k,DOWN)) * (grid_.u(i,j,k,DOWN)-grid_.u(i,j,k,CENTER)))));
 }
 inline real FluidSimulator3D::dVU_dx(int i, int j, int k)
 {
-return (0.25/dx * (  (grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,NORTH))*(grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,EAST))
+return (inv4dx * (  (grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,NORTH))*(grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,EAST))
                    - (grid_.u(i,j,k,WEST)+grid_.u(i,j+1,k,WEST))*(grid_.v(i,j,k,WEST)+grid_.v(i,j,k,CENTER)) 
                    + gamma * (  std::abs(grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,NORTH)) * (grid_.v(i,j,k,CENTER)-grid_.v(i,j,k,EAST)) 
                               - std::abs(grid_.u(i,j,k,WEST)+grid_.u(i,j+1,k,WEST)) * (grid_.v(i,j,k,WEST)-grid_.v(i,j,k,CENTER)))));
 }
 inline real FluidSimulator3D::dVW_dz(int i, int j, int k)
 {
-return (0.25/dz * (  (grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,NORTH))*(grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,UP))
+return (inv4dz * (  (grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,NORTH))*(grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,UP))
                    - (grid_.w(i,j,k,DOWN)+grid_.w(i,j+1,k,DOWN))*(grid_.v(i,j,k,DOWN)+grid_.v(i,j,k,CENTER)) 
                    + gamma * (  std::abs(grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,NORTH)) * (grid_.v(i,j,k,CENTER)-grid_.v(i,j,k,UP)) 
                               - std::abs(grid_.w(i,j,k,DOWN)+grid_.w(i,j+1,k,DOWN)) * (grid_.v(i,j,k,DOWN)-grid_.v(i,j,k,CENTER)))));
 }
 inline real FluidSimulator3D::dWU_dx(int i, int j, int k)
 {
-return (0.25/dx * (  (grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,UP))*(grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,EAST))
+return (inv4dx * (  (grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,UP))*(grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,EAST))
                    - (grid_.u(i,j,k,WEST)+grid_.u(i,j,k+1,WEST))*(grid_.w(i,j,k,WEST)+grid_.w(i,j,k,CENTER)) 
                    + gamma * (  std::abs(grid_.u(i,j,k,CENTER)+grid_.u(i,j,k,UP)) * (grid_.w(i,j,k,CENTER)-grid_.w(i,j,k,EAST)) 
                               - std::abs(grid_.u(i,j,k,WEST)+grid_.u(i,j,k+1,WEST)) * (grid_.w(i,j,k,WEST)-grid_.w(i,j,k,CENTER)))));
 }
 inline real FluidSimulator3D::dWV_dy(int i, int j, int k)
 {
-return (0.25/dy* ( (grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,UP))*(grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,NORTH))
+return (inv4dy* ( (grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,UP))*(grid_.w(i,j,k,CENTER)+grid_.w(i,j,k,NORTH))
                   -(grid_.v(i,j,k,SOUTH)+grid_.v(i,j,k+1,SOUTH))*(grid_.w(i,j,k,SOUTH)+grid_.w(i,j,k,CENTER))
                   +gamma * (  std::abs(grid_.v(i,j,k,CENTER)+grid_.v(i,j,k,UP)) * (grid_.w(i,j,k,CENTER)-grid_.w(i,j,k,NORTH))  
                             - std::abs(grid_.v(i,j,k,SOUTH)+grid_.v(i,j,k+1,SOUTH)) * (grid_.w(i,j,k,SOUTH)-grid_.w(i,j,k,CENTER)))));

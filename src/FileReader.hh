@@ -80,8 +80,11 @@ inline int FileReader::getIntParameter(const std::string &key) const
 inline real FileReader::getRealParameter(const std::string &key) const
 {
    auto iter = RealParameter.find(key);
-   CHECK_MSG(iter != RealParameter.end(), "Parameter '" + key +"' does not exist!");
-   return iter->second;
+   if(iter != RealParameter.end())
+      return iter->second;
+   auto iter2 = IntParameter.find(key);
+   CHECK_MSG(iter2 != IntParameter.end(), "Parameter '" + key +"' does not exist!");
+   return iter2->second;
 }
 
 inline std::string FileReader::getStringParameter(const std::string &key) const

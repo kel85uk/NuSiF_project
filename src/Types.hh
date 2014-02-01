@@ -6,10 +6,4 @@
 // please do not use "float" or "double" directly in your code, but use real instead
 typedef double real;
 
-
-
-// Enumeration of boundary conditions
-typedef enum { NOSLIP, SLIP, OUTFLOW, PERIODIC } BCTYPE;
-
-
 #endif //TYPES_HH

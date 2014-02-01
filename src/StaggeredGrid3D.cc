@@ -14,6 +14,12 @@ StaggeredGrid3D::StaggeredGrid3D (int xsize, int ysize, int zsize, real delx, re
 					isfluid_(xsize+2,ysize+2,zsize+2), dx_(delx), dy_(dely), dz_(delz)
 {
    std::cout<<"\nMaking Staggered Grid\n";
+   // Counting cells
+   numFluid_ = 0;
+   for (int i=1; i<isfluid_.getSize(0)-1; i++) 
+       for (int j=1; j<isfluid_.getSize(1)-1; j++)
+           for (int k=1; k<isfluid_.getSize(2)-1; k++)
+                numFluid_+=isfluid_(i,j,k);
    p_.fill(1.0);
    u_.fill(0.0);
    v_.fill(0.0);
@@ -45,6 +51,12 @@ dy_(ylength/config.getIntParameter("jmax")), dz_(zlength/config.getIntParameter(
                    CHECK_MSG(!((isfluid_(i,j+1,k) && isfluid_(i,j-1,k)) || (isfluid_(i+1,j,k) && isfluid_(i-1,j,k))
                                  || (isfluid_(i,j,k+1) && isfluid_(i,j,k-1))), "Walls must be minimum 2 cell thick");
 
+   // Counting cells
+   numFluid_ = 0;
+   for (int i=1; i<isfluid_.getSize(0)-1; i++) 
+       for (int j=1; j<isfluid_.getSize(1)-1; j++)
+           for (int k=1; k<isfluid_.getSize(2)-1; k++)
+                numFluid_+=isfluid_(i,j,k);
    std::cout<<"\nInitializing Grid\n";
 
    if (!config.find("P_INIT")) {
@@ -70,6 +82,7 @@ dy_(ylength/config.getIntParameter("jmax")), dz_(zlength/config.getIntParameter(
        w_.fill(0.0); }
    else 
        w_.fill(config.getRealParameter("W_INIT"));
+
 }
 
 void StaggeredGrid3D::setCellToObstacle(int x, int y, int z)

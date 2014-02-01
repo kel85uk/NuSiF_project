@@ -51,10 +51,10 @@ class MatrixCOO
 public:
    MatrixCOO();
    MatrixCOO( Array<real> &dense2D ); // Create sparse matrix from dense 2D Array
-	 
-	 void mat_set(int i, int j, double value); // Manually set an element inside the matrix
 
-	 MatrixCOO(const MatrixCOO& s); //Not implemented yet
+   void mat_set(int i, int j, double value); // Manually set an element inside the matrix
+
+   MatrixCOO(const MatrixCOO& s); //Not implemented yet
 
    inline real& operator () ( int i ,int j );
    
@@ -63,14 +63,14 @@ public:
    //Arithmetic Operators for MatrixCOOs
    MatrixCOO& operator= (const MatrixCOO &rhs);
 
-	 //Convenient functions
-	 void speye(int n); //Create sparse Identity matrix
+   //Convenient functions
+   void speye(int n); //Create sparse Identity matrix
 	 
-	 Array<real> mvmult(Array<real>& Y); //Matvec operation
-	 MatrixCOO diags_sp();
-	 MatrixCOO tril();
-	 MatrixCOO triu();
- 	 MatrixCOO transpose(); //Transpose matrix (Not implemented yet)
+   Array<real> mvmult(Array<real>& Y); //Matvec operation
+   MatrixCOO diags_sp();
+   MatrixCOO tril();
+   MatrixCOO triu();
+   MatrixCOO transpose(); //Transpose matrix (Not implemented yet)
 
    // return total size of the MatrixCOO
    int getSize() const;

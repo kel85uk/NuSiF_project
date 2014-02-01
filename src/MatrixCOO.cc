@@ -92,7 +92,6 @@ MatrixCOO MatrixCOO::triu(){
 }
 
 Array<real> MatrixCOO::mvmult(Array<real> &Y){
-//	Array result(Y.getSize());
 	Array<real> result(Y.getSize());
 	result.fill(0.);
 	int rowk, colk = 0;
